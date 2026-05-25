@@ -53,7 +53,9 @@ function CreateProfile() {
 
   return (
     <div style={{ maxWidth: "500px", margin: "50px auto", padding: "20px" }}>
-      <h2>Create Your Profile 👤</h2>
+      <h2 style={{ color: "#1a1a1a", fontSize: "26px", marginBottom: "28px", textAlign: "center" }}>
+          Create Your Profile 👤
+        </h2>
 
       <div style={{ marginBottom: "15px" }}>
         <label>Username *</label><br />

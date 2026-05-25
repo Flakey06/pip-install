@@ -6,7 +6,7 @@ import { useState } from "react";
 
 const FAQS = [
   { question: "What is pip install?", answer: "pip install connects you with like-minded students based on your interests and personality!" },
-  { question: "How does matching work?", answer: "We group you with 3-5 people who share similar interests, major, and personality traits." },
+  { question: "How does matching work?", answer: "We group you with 1-5 people who share similar interests, major, and personality traits." },
   { question: "Is it safe?", answer: "Yes! You can block or report any user who makes you uncomfortable." },
   { question: "Can I leave a group?", answer: "Absolutely! You can leave and join new groups anytime." }
 ];
@@ -60,7 +60,7 @@ function Login() {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "28px" }}>
           {[
             { icon: "🤝", text: "Get matched with compatible people" },
-            { icon: "💬", text: "Chat in small groups of 3–5" },
+            { icon: "💬", text: "Chat in small groups of 1–5" },
             { icon: "🎯", text: "Filter by interests & skills" },
             { icon: "🔒", text: "Safe — block & report anytime" },
           ].map((item, i) => (

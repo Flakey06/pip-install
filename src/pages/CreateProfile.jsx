@@ -3,6 +3,8 @@ import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
+// potentially to create: add more, and add word to data base (ignore capital letters and spacing)
+// maybe a drop-down will be better, just incase got a lot to choose from, then users can search keywords
 const INTERESTS = [
   "Hackathons", "Gaming", "Music", "Sports", "Art",
   "Entrepreneurship", "AI", "Design", "Photography", "Reading"
@@ -25,6 +27,7 @@ function CreateProfile() {
     );
   };
 
+  // ensure nus student?
   const handleSubmit = async () => {
     if (!username || !major || !year) {
       alert("Please fill in all required fields!");
@@ -93,7 +96,7 @@ function CreateProfile() {
         <input
           value={telegram}
           onChange={e => setTelegram(e.target.value)}
-          placeholder="e.g. @jamie"
+          placeholder="e.g. @pip-install"
           style={{ width: "100%", padding: "8px", marginTop: "5px" }}
         />
       </div>

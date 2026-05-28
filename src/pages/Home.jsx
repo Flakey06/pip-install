@@ -109,7 +109,26 @@ function Home() {
         >
           Edit Profile ✏️
         </button>
-
+        
+        <button
+          onClick={() => navigate("/chat")}
+          style={{
+            width: "100%",
+            padding: "14px",
+            background: "#4F46E5",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            cursor: "pointer",
+            fontSize: "16px",
+            fontWeight: "bold",
+            marginBottom: "12px",
+            boxShadow: "0 4px 12px rgba(79,70,229,0.3)"
+          }}
+        >
+          Chats 
+        </button>
+        
         <button
           onClick={logout}
           style={{

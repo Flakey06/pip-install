@@ -2,11 +2,8 @@ import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-
-const INTERESTS = [
-  "Hackathons", "Gaming", "Music", "Sports", "Art",
-  "Entrepreneurship", "AI", "Design", "Photography", "Reading"
-];
+import { useInterests } from "../hooks/useInterests";
+import InterestSelector from "../components/InterestSelector";
 
 function EditProfile() {
   const [username, setUsername] = useState("");
@@ -15,6 +12,7 @@ function EditProfile() {
   const [bio, setBio] = useState("");
   const [telegram, setTelegram] = useState("");
   const [interests, setInterests] = useState([]);
+  const { allInterests, addToMaster } = useInterests();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,14 +33,6 @@ function EditProfile() {
     fetchProfile();
   }, []);
 
-  const toggleInterest = (interest) => {
-    setInterests(prev =>
-      prev.includes(interest)
-        ? prev.filter(i => i !== interest)
-        : [...prev, interest]
-    );
-  };
-
   const handleSave = async () => {
     if (!username || !major || !year) {
       alert("Please fill in all required fields!");
@@ -57,33 +47,16 @@ function EditProfile() {
   };
 
   const inputStyle = {
-    width: "100%",
-    padding: "12px",
-    marginTop: "6px",
-    borderRadius: "10px",
-    border: "1.5px solid #e0e0e0",
-    fontSize: "15px",
-    color: "#1a1a1a",
-    background: "white",
-    outline: "none"
+    width: "100%", padding: "12px", marginTop: "6px",
+    borderRadius: "10px", border: "1.5px solid #e0e0e0",
+    fontSize: "15px", color: "#1a1a1a", background: "white",
+    outline: "none", boxSizing: "border-box"
   };
-
-  const labelStyle = {
-    color: "#1a1a1a",
-    fontSize: "14px",
-    fontWeight: "bold"
-  };
+  const labelStyle = { color: "#1a1a1a", fontSize: "14px", fontWeight: "bold" };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "white",
-      display: "flex",
-      justifyContent: "center",
-      padding: "0 24px"
-    }}>
+    <div style={{ minHeight: "100vh", background: "white", display: "flex", justifyContent: "center", padding: "0 24px" }}>
       <div style={{ width: "100%", maxWidth: "420px", paddingTop: "60px", paddingBottom: "60px" }}>
-
         <h2 style={{ color: "#1a1a1a", fontSize: "26px", marginBottom: "28px", textAlign: "center" }}>
           Edit Profile ✏️
         </h2>
@@ -117,73 +90,33 @@ function EditProfile() {
 
         <div style={{ marginBottom: "16px" }}>
           <label style={labelStyle}>Bio</label>
-          <textarea
-            value={bio}
-            onChange={e => setBio(e.target.value)}
-            style={{ ...inputStyle, height: "90px", resize: "none" }}
-          />
+          <textarea value={bio} onChange={e => setBio(e.target.value)}
+            style={{ ...inputStyle, height: "90px", resize: "none" }} />
         </div>
 
-        <div style={{ marginBottom: "28px" }}>
-          <label style={labelStyle}>Interests</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
-            {INTERESTS.map(interest => (
-              <button
-                key={interest}
-                onClick={() => toggleInterest(interest)}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "20px",
-                  border: "2px solid #4F46E5",
-                  background: interests.includes(interest) ? "#4F46E5" : "white",
-                  color: interests.includes(interest) ? "white" : "#4F46E5",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  fontWeight: "bold"
-                }}
-              >
-                {interest}
-              </button>
-            ))}
-          </div>
-        </div>
+        <InterestSelector
+          interests={interests}
+          setInterests={setInterests}
+          allInterests={allInterests}
+          addToMaster={addToMaster}
+        />
 
-        <button
-          onClick={handleSave}
-          style={{
-            width: "100%",
-            padding: "14px",
-            background: "#4F46E5",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            cursor: "pointer",
-            fontSize: "16px",
-            fontWeight: "bold",
-            marginBottom: "12px",
-            boxShadow: "0 4px 12px rgba(79,70,229,0.3)"
-          }}
-        >
+        <button onClick={handleSave} style={{
+          width: "100%", padding: "14px", background: "#4F46E5",
+          color: "white", border: "none", borderRadius: "12px",
+          cursor: "pointer", fontSize: "16px", fontWeight: "bold",
+          marginBottom: "12px", boxShadow: "0 4px 12px rgba(79,70,229,0.3)"
+        }}>
           Save Changes ✅
         </button>
 
-        <button
-          onClick={() => navigate("/home")}
-          style={{
-            width: "100%",
-            padding: "14px",
-            background: "white",
-            color: "#4F46E5",
-            border: "2px solid #4F46E5",
-            borderRadius: "12px",
-            cursor: "pointer",
-            fontSize: "16px",
-            fontWeight: "bold"
-          }}
-        >
+        <button onClick={() => navigate("/home")} style={{
+          width: "100%", padding: "14px", background: "white",
+          color: "#4F46E5", border: "2px solid #4F46E5", borderRadius: "12px",
+          cursor: "pointer", fontSize: "16px", fontWeight: "bold"
+        }}>
           Cancel
         </button>
-
       </div>
     </div>
   );

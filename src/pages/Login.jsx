@@ -1,6 +1,5 @@
 import { auth, googleProvider, db } from "../firebase";
-import { signInWithPopup } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";import { doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -11,14 +10,33 @@ const FAQS = [
   { question: "Can I leave a group?", answer: "Absolutely! You can leave and join new groups anytime." }
 ];
 
+
+
+/*
+const login = async () => {
+  try {
+    await signInWithPopup(auth, googleProvider);
+    const user = auth.currentUser;
+    const docSnap = await getDoc(doc(db, "users", user.uid));
+    if (docSnap.exists()) {
+      navigate("/home");
+    } else {
+      navigate("/create-profile");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+*/
+
 function Login() {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
 
   const login = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
+      await signInWithPopup(auth, googleProvider);
+      const user = auth.currentUser;
       const docSnap = await getDoc(doc(db, "users", user.uid));
       if (docSnap.exists()) {
         navigate("/home");

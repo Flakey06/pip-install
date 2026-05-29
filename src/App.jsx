@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import CreateProfile from "./pages/CreateProfile";
 import Home from "./pages/Home";
 import EditProfile from "./pages/EditProfile";
+import GroupChat from "./pages/GroupChat";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/create-profile" element={<CreateProfile />} />
         <Route path="/home" element={<Home />} />
         <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/chat/:groupId" element={<GroupChat />} />
       </Routes>
     </BrowserRouter>
   );

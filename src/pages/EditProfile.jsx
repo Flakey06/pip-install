@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { useInterests } from "../hooks/useInterests";
 import InterestSelector from "../components/InterestSelector";
+import AvatarPicker from "../components/AvatarPicker";
 
 function EditProfile() {
   const [username, setUsername] = useState("");
@@ -12,6 +13,8 @@ function EditProfile() {
   const [bio, setBio] = useState("");
   const [telegram, setTelegram] = useState("");
   const [interests, setInterests] = useState([]);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
   const { allInterests, addToMaster } = useInterests();
   const navigate = useNavigate();
 
@@ -28,6 +31,7 @@ function EditProfile() {
         setBio(data.bio || "");
         setTelegram(data.telegram || "");
         setInterests(data.interests || []);
+        setAvatarUrl(data.photoURL || "");
       }
     };
     fetchProfile();
@@ -40,6 +44,7 @@ function EditProfile() {
     }
     const user = auth.currentUser;
     await updateDoc(doc(db, "users", user.uid), {
+      photoURL: avatarUrl,
       username, major, year, bio, telegram, interests,
       updatedAt: new Date()
     });
@@ -57,9 +62,48 @@ function EditProfile() {
   return (
     <div style={{ minHeight: "100vh", background: "white", display: "flex", justifyContent: "center", padding: "0 24px" }}>
       <div style={{ width: "100%", maxWidth: "420px", paddingTop: "60px", paddingBottom: "60px" }}>
-        <h2 style={{ color: "#1a1a1a", fontSize: "26px", marginBottom: "28px", textAlign: "center" }}>
+
+        <h2 style={{ color: "#1a1a1a", fontSize: "26px", marginBottom: "20px", textAlign: "center" }}>
           Edit Profile ✏️
         </h2>
+
+        {/* Avatar picker */}
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <img
+              src={avatarUrl || auth.currentUser?.photoURL}
+              alt="avatar"
+              style={{
+                width: "90px", height: "90px", borderRadius: "50%",
+                border: "3px solid #4F46E5", objectFit: "cover"
+              }}
+            />
+            <button
+              onClick={() => setShowAvatarPicker(true)}
+              style={{
+                position: "absolute", bottom: 0, right: 0,
+                width: "28px", height: "28px", borderRadius: "50%",
+                background: "#4F46E5", color: "white",
+                border: "2px solid white", cursor: "pointer",
+                fontSize: "14px", display: "flex",
+                alignItems: "center", justifyContent: "center"
+              }}
+            >
+              ✏️
+            </button>
+          </div>
+          <p style={{ fontSize: "12px", color: "#888", marginTop: "8px" }}>
+            Tap to change avatar
+          </p>
+        </div>
+
+        {showAvatarPicker && (
+          <AvatarPicker
+            currentPhoto={avatarUrl}
+            onSave={(url) => { setAvatarUrl(url); setShowAvatarPicker(false); }}
+            onClose={() => setShowAvatarPicker(false)}
+          />
+        )}
 
         <div style={{ marginBottom: "16px" }}>
           <label style={labelStyle}>Username *</label>
@@ -117,6 +161,7 @@ function EditProfile() {
         }}>
           Cancel
         </button>
+
       </div>
     </div>
   );

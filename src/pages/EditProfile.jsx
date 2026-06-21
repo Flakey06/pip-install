@@ -3,122 +3,113 @@ import { auth, db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { useInterests } from "../hooks/useInterests";
-import InterestSelector from "../components/InterestSelector";
 import AvatarPicker from "../components/AvatarPicker";
 
-function EditProfile() {
+export default function EditProfile() {
   const [username, setUsername] = useState("");
   const [major, setMajor] = useState("");
   const [year, setYear] = useState("");
   const [bio, setBio] = useState("");
   const [telegram, setTelegram] = useState("");
-  const [interests, setInterests] = useState([]);
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [interestText, setInterestText] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const { allInterests, addToMaster } = useInterests();
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetch = async () => {
       const user = auth.currentUser;
       if (!user) return;
-      const docSnap = await getDoc(doc(db, "users", user.uid));
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setUsername(data.username);
-        setMajor(data.major);
-        setYear(data.year);
-        setBio(data.bio || "");
-        setTelegram(data.telegram || "");
-        setInterests(data.interests || []);
-        setAvatarUrl(data.photoURL || "");
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        const d = snap.data();
+        setUsername(d.username || "");
+        setMajor(d.major || "");
+        setYear(d.year || "");
+        setBio(d.bio || "");
+        setTelegram(d.telegram || "");
+        setInterestText((d.interests || []).join(", "));
+        setAvatarUrl(d.photoURL || "");
       }
     };
-    fetchProfile();
+    fetch();
   }, []);
 
   const handleSave = async () => {
-    if (!username || !major || !year) {
-      alert("Please fill in all required fields!");
-      return;
-    }
-    const user = auth.currentUser;
-    await updateDoc(doc(db, "users", user.uid), {
-      photoURL: avatarUrl,
+    if (!username) { alert("Username required!"); return; }
+    setSaving(true);
+    const interests = interestText.split(",").map(s => s.toLowerCase().trim()).filter(Boolean);
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
       username, major, year, bio, telegram, interests,
-      updatedAt: new Date()
+      photoURL: avatarUrl, updatedAt: new Date()
     });
     navigate("/home");
   };
 
-  const inputStyle = {
-    width: "100%", padding: "12px", marginTop: "6px",
-    borderRadius: "10px", border: "1.5px solid #e0e0e0",
-    fontSize: "15px", color: "#1a1a1a", background: "white",
-    outline: "none", boxSizing: "border-box"
-  };
-  const labelStyle = { color: "#1a1a1a", fontSize: "14px", fontWeight: "bold" };
+  const FIELDS = [
+    { label: "Username", value: username, set: setUsername, placeholder: "Your username" },
+    { label: "Bio", value: bio, set: setBio, placeholder: "Tell people about yourself" },
+    { label: "Major", value: major, set: setMajor, placeholder: "e.g. Computer Science" },
+    { label: "Telegram", value: telegram, set: setTelegram, placeholder: "@handle" },
+    { label: "Interests (comma separated)", value: interestText, set: setInterestText, placeholder: "e.g. AI, basketball, music" },
+  ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "white", display: "flex", justifyContent: "center", padding: "0 24px" }}>
-      <div style={{ width: "100%", maxWidth: "420px", paddingTop: "60px", paddingBottom: "60px" }}>
+    <div className="page" style={{ paddingBottom: 0 }}>
+      {/* Header */}
+      <div className="header">
+        <button onClick={() => navigate("/home")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <span className="header-title">Edit Profile</span>
+        <button className="text-btn" onClick={handleSave} disabled={saving}>
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
 
-        <h2 style={{ color: "#1a1a1a", fontSize: "26px", marginBottom: "20px", textAlign: "center" }}>
-          Edit Profile ✏️
-        </h2>
+      {/* Avatar */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px 0 20px" }}>
+        <img
+          src={avatarUrl || auth.currentUser?.photoURL}
+          alt="avatar"
+          className="avatar"
+          style={{ width: "90px", height: "90px", marginBottom: "10px", cursor: "pointer" }}
+          onClick={() => setShowAvatarPicker(true)}
+        />
+        <button className="text-btn" onClick={() => setShowAvatarPicker(true)}>
+          Change Photo
+        </button>
+      </div>
 
-        {/* Avatar picker */}
-        <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <div style={{ position: "relative", display: "inline-block" }}>
-            <img
-              src={avatarUrl || auth.currentUser?.photoURL}
-              alt="avatar"
-              style={{
-                width: "90px", height: "90px", borderRadius: "50%",
-                border: "3px solid #4F46E5", objectFit: "cover"
-              }}
+      <div className="divider" />
+
+      {/* Form fields */}
+      <div style={{ padding: "0 16px" }}>
+        {FIELDS.map((field, i) => (
+          <div key={field.label} style={{ padding: "14px 0", borderBottom: i < FIELDS.length - 1 ? "1px solid var(--border)" : "none" }}>
+            <label className="input-label">{field.label}</label>
+            <input
+              className="input-underline"
+              value={field.value}
+              onChange={e => field.set(e.target.value)}
+              placeholder={field.placeholder}
             />
-            <button
-              onClick={() => setShowAvatarPicker(true)}
-              style={{
-                position: "absolute", bottom: 0, right: 0,
-                width: "28px", height: "28px", borderRadius: "50%",
-                background: "#4F46E5", color: "white",
-                border: "2px solid white", cursor: "pointer",
-                fontSize: "14px", display: "flex",
-                alignItems: "center", justifyContent: "center"
-              }}
-            >
-              ✏️
-            </button>
           </div>
-          <p style={{ fontSize: "12px", color: "#888", marginTop: "8px" }}>
-            Tap to change avatar
-          </p>
-        </div>
+        ))}
 
-        {showAvatarPicker && (
-          <AvatarPicker
-            currentPhoto={avatarUrl}
-            onSave={(url) => { setAvatarUrl(url); setShowAvatarPicker(false); }}
-            onClose={() => setShowAvatarPicker(false)}
-          />
-        )}
-
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Username *</label>
-          <input value={username} onChange={e => setUsername(e.target.value)} style={inputStyle} />
-        </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Major *</label>
-          <input value={major} onChange={e => setMajor(e.target.value)} style={inputStyle} />
-        </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Year of Study *</label>
-          <select value={year} onChange={e => setYear(e.target.value)} style={inputStyle}>
-            <option value="">Select year</option>
+        {/* Year */}
+        <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border)" }}>
+          <label className="input-label">Year of Study</label>
+          <select
+            className="input-underline"
+            value={year}
+            onChange={e => setYear(e.target.value)}
+            style={{ cursor: "pointer" }}
+          >
+            <option value="">Select</option>
             <option value="1">Year 1</option>
             <option value="2">Year 2</option>
             <option value="3">Year 3</option>
@@ -126,45 +117,15 @@ function EditProfile() {
             <option value="grad">Graduate</option>
           </select>
         </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Telegram Handle</label>
-          <input value={telegram} onChange={e => setTelegram(e.target.value)} placeholder="@username" style={inputStyle} />
-        </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Bio</label>
-          <textarea value={bio} onChange={e => setBio(e.target.value)}
-            style={{ ...inputStyle, height: "90px", resize: "none" }} />
-        </div>
-
-        <InterestSelector
-          interests={interests}
-          setInterests={setInterests}
-          allInterests={allInterests}
-          addToMaster={addToMaster}
-        />
-
-        <button onClick={handleSave} style={{
-          width: "100%", padding: "14px", background: "#4F46E5",
-          color: "white", border: "none", borderRadius: "12px",
-          cursor: "pointer", fontSize: "16px", fontWeight: "bold",
-          marginBottom: "12px", boxShadow: "0 4px 12px rgba(79,70,229,0.3)"
-        }}>
-          Save Changes ✅
-        </button>
-
-        <button onClick={() => navigate("/home")} style={{
-          width: "100%", padding: "14px", background: "white",
-          color: "#4F46E5", border: "2px solid #4F46E5", borderRadius: "12px",
-          cursor: "pointer", fontSize: "16px", fontWeight: "bold"
-        }}>
-          Cancel
-        </button>
-
       </div>
+
+      {showAvatarPicker && (
+        <AvatarPicker
+          currentPhoto={avatarUrl}
+          onSave={url => { setAvatarUrl(url); setShowAvatarPicker(false); }}
+          onClose={() => setShowAvatarPicker(false)}
+        />
+      )}
     </div>
   );
 }
-
-export default EditProfile;

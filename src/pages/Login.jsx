@@ -124,7 +124,7 @@ export default function Login() {
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "12px" }}>
                 <button className="btn-primary" onClick={handleGoogle} disabled={loading}
                   style={{ fontSize: "15px" }}>
-                  🔑 Continue with Google
+                  ... Continue with Google
                 </button>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -135,7 +135,7 @@ export default function Login() {
 
                 <button className="btn-secondary" onClick={() => { setMode("login"); setError(""); }}
                   style={{ fontSize: "15px" }}>
-                  📧 Log in with Email
+                  Log in with Email
                 </button>
 
                 <button onClick={() => { setMode("signup"); setError(""); }} style={{
@@ -159,7 +159,7 @@ export default function Login() {
                   cursor: "pointer", color: "var(--text)"
                 }}>←</button>
                 <h2 className="display-font" style={{ fontSize: "22px", color: "var(--text)" }}>
-                  Welcome back 👋
+                  Welcome back !!
                 </h2>
               </div>
 
@@ -236,7 +236,7 @@ export default function Login() {
                   cursor: "pointer", color: "var(--text)"
                 }}>←</button>
                 <h2 className="display-font" style={{ fontSize: "22px", color: "var(--text)" }}>
-                  Create account 🚀
+                  Create account 
                 </h2>
               </div>
 
@@ -301,7 +301,7 @@ export default function Login() {
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <button className="btn-primary" onClick={handleEmailSignup} disabled={loading}
                   style={{ fontSize: "15px" }}>
-                  {loading ? "Creating account..." : "Create Account 🚀"}
+                  {loading ? "Creating account..." : "Create Account"}
                 </button>
                 <button onClick={() => { setMode("login"); setError(""); }} style={{
                   background: "none", border: "none", color: "var(--purple-dark)",

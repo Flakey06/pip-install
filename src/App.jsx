@@ -9,9 +9,13 @@ import Groups from "./pages/Groups";
 import Friends from "./pages/Friends";
 import Explore from "./pages/Explore";
 import PrivateChat from "./pages/PrivateChat";
+import GroupCalendar from "./pages/GroupCalendar";
+import Calendar from "./pages/Calendar";
+import GroupInfo from "./pages/GroupInfo";
+import Credits from "./pages/Credits";
 
 function App() {
-  useTheme(); // applies theme CSS vars globally on mount
+  useTheme();
   return (
     <BrowserRouter>
       <Routes>
@@ -20,10 +24,14 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/chat/:groupId" element={<GroupChat />} />
+        <Route path="/group-info/:groupId" element={<GroupInfo />} />
         <Route path="/groups" element={<Groups />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/explore" element={<Explore />} />
         <Route path="/private-chat/:friendId" element={<PrivateChat />} />
+        <Route path="/calendar/:groupId" element={<GroupCalendar />} />
+        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/credits" element={<Credits />} />
       </Routes>
     </BrowserRouter>
   );

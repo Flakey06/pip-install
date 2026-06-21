@@ -17,7 +17,7 @@ function AdminControls({ group, members, onClose }) {
     if (!transferTo) { alert("Select a member!"); return; }
     setLoading(true);
     await updateDoc(doc(db, "groups", group.id), { adminId: transferTo });
-    setMessage("✅ Admin rights transferred!");
+    setMessage("Admin rights transferred!");
     setLoading(false);
     setTimeout(onClose, 1500);
   };

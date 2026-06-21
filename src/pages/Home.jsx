@@ -1,291 +1,146 @@
-import ThemePicker from "../components/ThemePicker";
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { useUnreadMessages } from "../hooks/useUnreadMessages";
+import { getCredits, awardCredits } from "../hooks/useCredits";
+import TabBar from "../components/TabBar";
+import ThemePicker from "../components/ThemePicker";
 
 export default function Home() {
   const [profile, setProfile] = useState(null);
-  const navigate = useNavigate();
+  const [credits, setCredits] = useState(0);
   const [showTheme, setShowTheme] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetch = async () => {
       const user = auth.currentUser;
       if (!user) return;
-      const docSnap = await getDoc(doc(db, "users", user.uid));
-      if (docSnap.exists()) setProfile(docSnap.data());
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) setProfile(snap.data());
+      const c = await getCredits();
+      setCredits(c);
+      await awardCredits("daily_login");
     };
-    fetchProfile();
+    fetch();
   }, []);
 
-  const groupIds = profile?.groups || [];
-  const { totalUnread } = useUnreadMessages(groupIds);
+  const { totalUnread } = useUnreadMessages(profile?.groups || []);
 
   const logout = async () => {
     await signOut(auth);
     navigate("/");
   };
 
-  if (!profile)
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-        }}
-      >
-        <div
-          style={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "50%",
-            border: "3px solid var(--purple-light)",
-            borderTopColor: "var(--purple)",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-
-  const NAV_ITEMS = [
-    { icon: "💬", label: "My Groups", path: "/groups", badge: totalUnread },
-    { icon: "🔍", label: "Explore", path: "/explore" },
-    { icon: "👥", label: "Friends", path: "/friends" },
-  ];
+  if (!profile) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
+      <div className="loader" />
+    </div>
+  );
 
   return (
-    <>
-      <div className="mesh-bg" />
-      <div className="page-container">
-        <div className="page-inner">
-          {/* Profile header */}
-          <div
-            className="fade-up"
-            style={{ textAlign: "center", marginBottom: "28px" }}
-          >
-            <div
-              style={{
-                position: "relative",
-                display: "inline-block",
-                marginBottom: "14px",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  inset: "-3px",
-                  borderRadius: "50%",
-                  background:
-                    "linear-gradient(135deg, var(--purple), var(--pink))",
-                  zIndex: 0,
-                }}
-              />
-              <img
-                src={profile.photoURL || auth.currentUser?.photoURL}
-                alt="profile"
-                style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  position: "relative",
-                  zIndex: 1,
-                  border: "3px solid white",
-                }}
-              />
+    <div className="page">
+      {/* Header */}
+      <div className="header">
+        <span className="header-title">{profile.username}</span>
+        <button onClick={logout} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)", display: "flex", alignItems: "center" }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Profile section */}
+      <div style={{ padding: "20px 16px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "16px" }}>
+          {/* Avatar */}
+          <img
+            src={profile.photoURL || auth.currentUser?.photoURL}
+            alt="avatar"
+            className="avatar"
+            style={{ width: "80px", height: "80px", flexShrink: 0 }}
+          />
+
+          {/* Stats */}
+          <div style={{ display: "flex", gap: "20px", flex: 1, justifyContent: "space-around" }}>
+            <div style={{ textAlign: "center" }}>
+              <p style={{ fontSize: "18px", fontWeight: "700", color: "var(--text)", margin: 0 }}>
+                {profile.groups?.length || 0}
+              </p>
+              <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0 }}>Groups</p>
             </div>
-
-            <h2
-              style={{
-                fontFamily: "'Comic Sans MS', sans-serif",
-                fontSize: "26px",
-                fontWeight: "800",
-                color: "var(--text)",
-                marginBottom: "4px",
-              }}
-            >
-              Hey, {profile.username}!
-            </h2>
-
-            <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-              {profile.email}
-            </p>
-          </div>
-
-          {/* Info card */}
-          <div className="card fade-up-1" style={{ marginBottom: "16px" }}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "12px",
-              }}
-            >
-              <div>
-                <p className="section-label">Major</p>
-                <p
-                  style={{
-                    fontWeight: "600",
-                    fontSize: "14px",
-                    color: "var(--text)",
-                  }}
-                >
-                  {profile.major}
-                </p>
-              </div>
-
-              <div>
-                <p className="section-label">Year</p>
-                <p
-                  style={{
-                    fontWeight: "600",
-                    fontSize: "14px",
-                    color: "var(--text)",
-                  }}
-                >
-                  Year {profile.year}
-                </p>
-              </div>
-
-              {profile.telegram && (
-                <div>
-                  <p className="section-label">Telegram</p>
-                  <p
-                    style={{
-                      fontWeight: "600",
-                      fontSize: "14px",
-                      color: "var(--purple)",
-                    }}
-                  >
-                    {profile.telegram}
-                  </p>
-                </div>
-              )}
-
-              {profile.bio && (
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <p className="section-label">Bio</p>
-                  <p
-                    style={{
-                      fontSize: "14px",
-                      color: "var(--text-muted)",
-                      lineHeight: "1.5",
-                    }}
-                  >
-                    {profile.bio}
-                  </p>
-                </div>
-              )}
+            <div style={{ textAlign: "center" }}>
+              <p style={{ fontSize: "18px", fontWeight: "700", color: "var(--text)", margin: 0 }}>
+                {profile.interests?.length || 0}
+              </p>
+              <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0 }}>Interests</p>
             </div>
-          </div>
-
-          {/* Interests */}
-          <div className="fade-up-2" style={{ marginBottom: "28px" }}>
-            <p className="section-label">Interests</p>
+            {/* Coins — tap to go to credits page */}
             <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "8px",
-              }}
+              style={{ textAlign: "center", cursor: "pointer" }}
+              onClick={() => navigate("/credits")}
             >
-              {profile.interests?.map((interest, i) => (
-                <span
-                  key={interest}
-                  className="tag"
-                  style={{
-                    animation: `fadeUp 0.4s ${i * 0.05}s ease both`,
-                  }}
-                >
-                  {interest}
-                </span>
-              ))}
+              <p style={{ fontSize: "18px", fontWeight: "700", color: "var(--text)", margin: 0 }}>
+                {credits}
+              </p>
+              <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0 }}>🪙 Coins</p>
             </div>
-          </div>
-
-          {/* Nav buttons */}
-          <div
-            className="fade-up-3"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-              marginBottom: "16px",
-            }}
-          >
-            {NAV_ITEMS.map((item, i) => (
-              <button
-                key={item.path}
-                className="btn-primary"
-                onClick={() => navigate(item.path)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  animation: `fadeUp 0.5s ${0.3 + i * 0.08}s ease both`,
-                }}
-              >
-                {item.icon} {item.label}
-
-                {item.badge > 0 && (
-                  <span
-                    style={{
-                      background: "#EF4444",
-                      color: "white",
-                      borderRadius: "20px",
-                      fontSize: "11px",
-                      fontWeight: "800",
-                      padding: "2px 8px",
-                      animation: "pulse 2s infinite",
-                    }}
-                  >
-                    {item.badge > 99 ? "99+" : item.badge}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Secondary buttons */}
-          <div
-            className="fade-up-4"
-            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-          >
-            {/* Theme Picker */}
-            <button
-              onClick={() => setShowTheme(true)}
-              className="btn-secondary"
-              style={{ marginBottom: "10px" }}
-            >
-              🎨 Change Theme
-            </button>
-
-            {showTheme && (
-              <ThemePicker onClose={() => setShowTheme(false)} />
-            )}
-
-            {/* Edit Profile */}
-            <button
-              className="btn-secondary"
-              onClick={() => navigate("/edit-profile")}
-            >
-              ✏️ Edit Profile
-            </button>
-
-            {/* Logout */}
-            <button className="btn-danger" onClick={logout}>
-              Log Out
-            </button>
           </div>
         </div>
+
+        {/* Name + bio */}
+        <div style={{ marginBottom: "14px" }}>
+          <p style={{ fontWeight: "700", fontSize: "15px", margin: "0 0 2px" }}>{profile.username}</p>
+          {profile.major && <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: "0 0 2px" }}>{profile.major} · Year {profile.year}</p>}
+          {profile.bio && <p style={{ fontSize: "14px", margin: "0 0 2px", lineHeight: "1.4" }}>{profile.bio}</p>}
+          {profile.telegram && (
+            <p style={{ fontSize: "14px", color: "var(--purple-dark)", margin: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              {profile.telegram}
+            </p>
+          )}
+        </div>
+
+        {/* Buttons */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+          <button className="btn-secondary" onClick={() => navigate("/edit-profile")} style={{ fontSize: "14px", padding: "8px" }}>
+            Edit profile
+          </button>
+          <button className="btn-secondary" onClick={() => setShowTheme(true)} style={{ fontSize: "14px", padding: "8px", width: "auto", paddingLeft: "16px", paddingRight: "16px" }}>
+            🎨
+          </button>
+          <button className="btn-secondary" onClick={() => navigate("/calendar")} style={{ fontSize: "14px", padding: "8px", width: "auto", paddingLeft: "16px", paddingRight: "16px" }}>
+            📅
+          </button>
+          <button className="btn-secondary" onClick={() => navigate("/credits")} style={{ fontSize: "14px", padding: "8px", width: "auto", paddingLeft: "16px", paddingRight: "16px" }}>
+            🪙
+          </button>
+        </div>
       </div>
-    </>
+
+      <div className="divider" style={{ margin: 0 }} />
+
+      {/* Interests */}
+      {profile.interests?.length > 0 && (
+        <>
+          <p className="section-label">Interests</p>
+          <div style={{ padding: "0 16px 20px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {profile.interests.map(i => (
+              <span key={i} className="tag">{i}</span>
+            ))}
+          </div>
+        </>
+      )}
+
+      <TabBar unread={totalUnread} />
+      {showTheme && <ThemePicker onClose={() => setShowTheme(false)} />}
+    </div>
   );
 }

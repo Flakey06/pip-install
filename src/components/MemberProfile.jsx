@@ -137,10 +137,10 @@ function MemberProfile({ uid, onClose }) {
               fontSize: "15px", fontWeight: "bold"
             }}
           >
-            {friendStatus === "none" && "➕ Add Friend"}
-            {friendStatus === "sent" && "✅ Request Sent"}
-            {friendStatus === "received" && "🤝 Accept Friend Request"}
-            {friendStatus === "friends" && "✅ Friends"}
+            {friendStatus === "none" && "Add Friend"}
+            {friendStatus === "sent" && "Request Sent"}
+            {friendStatus === "received" && "Accept Friend Request"}
+            {friendStatus === "friends" && "Friends"}
           </button>
 
         )}

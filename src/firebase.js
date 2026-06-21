@@ -17,4 +17,4 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 export const rtdb = getDatabase(app, "https://pip-install-21154-default-rtdb.asia-southeast1.firebasedatabase.app");
-export const storage = null; // Storage disabled — using base64 instead
+export const storage = null; 

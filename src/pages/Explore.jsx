@@ -1,98 +1,100 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
-import { collection, getDocs, addDoc, doc, updateDoc, arrayUnion, getDoc, serverTimestamp, query, where } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, updateDoc, arrayUnion, getDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { joinRandomGroup } from "../hooks/useGroups";
+import TabBar from "../components/TabBar";
 
-function Explore() {
+export default function Explore() {
   const [search, setSearch] = useState("");
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupTopic, setNewGroupTopic] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
-  const [message, setMessage] = useState("");
   const [userGroups, setUserGroups] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newTopics, setNewTopics] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [message, setMessage] = useState("");
+  const [tab, setTab] = useState("foryou"); // "foryou" | "all"
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchGroups();
-    fetchUserGroups();
-  }, []);
+  useEffect(() => { fetchAll(); }, []);
 
-  const fetchGroups = async () => {
+  const fetchAll = async () => {
     const snap = await getDocs(collection(db, "groups"));
-    const allGroups = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    setGroups(allGroups);
-    setLoading(false);
-  };
-
-  const fetchUserGroups = async () => {
+    setGroups(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     const user = auth.currentUser;
-    if (!user) return;
-    const snap = await getDoc(doc(db, "users", user.uid));
-    if (snap.exists()) setUserGroups(snap.data().groups || []);
+    if (user) {
+      const u = await getDoc(doc(db, "users", user.uid));
+      if (u.exists()) {
+        setUserGroups(u.data().groups || []);
+        setUserProfile(u.data());
+      }
+    }
+    setLoading(false);
   };
 
   const handleJoin = async (group) => {
     const uid = auth.currentUser.uid;
-    if (userGroups.length >= 7) {
-      setMessage("❌ You're in 7 groups already — leave one first!");
-      return;
-    }
-    if (group.members?.includes(uid)) {
-      navigate(`/chat/${group.id}`);
-      return;
-    }
-    if ((group.members?.length || 0) >= 6) {
-      setMessage("❌ This group is full!");
-      return;
-    }
+    if (userGroups.includes(group.id)) { navigate(`/chat/${group.id}`); return; }
+    if (userGroups.length >= 5) { setMessage("You're in 5 groups — leave one first!"); return; }
+    if ((group.members?.length || 0) >= 6) { setMessage("This group is full!"); return; }
     await updateDoc(doc(db, "groups", group.id), {
       members: arrayUnion(uid),
       memberCount: (group.members?.length || 0) + 1
     });
-    await updateDoc(doc(db, "users", uid), {
-      groups: arrayUnion(group.id)
-    });
-    setUserGroups(prev => [...prev, group.id]);
-    setMessage("✅ Joined! Opening chat...");
-    setTimeout(() => navigate(`/chat/${group.id}`), 800);
+    await updateDoc(doc(db, "users", uid), { groups: arrayUnion(group.id) });
+    setUserGroups(p => [...p, group.id]);
+    setMessage("Joined!");
+    setTimeout(() => navigate(`/chat/${group.id}`), 500);
+  };
+
+  const handleRandomMatch = async () => {
+    if (!userProfile) return;
+    if (userGroups.length >= 5) { setMessage("You're in 5 groups — leave one first!"); return; }
+    setJoining(true); setMessage("");
+    const result = await joinRandomGroup(userProfile);
+    if (result.success) {
+      if (result.waitingForMembers) {
+        setMessage("Group created! Waiting for others with similar interests...");
+        await fetchAll();
+      } else {
+        setMessage("Matched into a group!");
+        setTimeout(() => navigate(`/chat/${result.groupId}`), 500);
+      }
+    } else {
+      setMessage("Could not find a match right now. Try creating a group!");
+    }
+    setJoining(false);
   };
 
   const handleCreate = async () => {
-    if (!newGroupName.trim()) { alert("Please enter a group name!"); return; }
-    if (!newGroupTopic.trim()) { alert("Please enter at least one interest/topic!"); return; }
-    if (userGroups.length >= 7) {
-      setMessage("❌ You're in 7 groups already — leave one first!");
-      return;
-    }
+    if (!newName.trim() || !newTopics.trim()) { alert("Fill in all fields!"); return; }
+    if (userGroups.length >= 5) { setMessage("You're in 5 groups — leave one first!"); return; }
     setCreating(true);
     const uid = auth.currentUser.uid;
-    const topics = newGroupTopic.split(",").map(t => t.toLowerCase().trim()).filter(Boolean);
-
-    const newGroup = await addDoc(collection(db, "groups"), {
-      name: newGroupName.trim(),
-      members: [uid],
-      memberCount: 1,
-      sharedInterests: topics,
-      adminId: uid,
-      type: "interest",
-      createdAt: serverTimestamp()
+    const topics = newTopics.split(",").map(t => t.toLowerCase().trim()).filter(Boolean);
+    const g = await addDoc(collection(db, "groups"), {
+      name: newName.trim(), members: [uid], memberCount: 1,
+      sharedInterests: topics, adminId: uid,
+      type: "interest", createdAt: serverTimestamp()
     });
-
-    await updateDoc(doc(db, "users", uid), {
-      groups: arrayUnion(newGroup.id)
-    });
-
-    setCreating(false);
-    setShowCreate(false);
-    setNewGroupName("");
-    setNewGroupTopic("");
-    setMessage("✅ Group created!");
-    await fetchGroups();
-    setTimeout(() => navigate(`/chat/${newGroup.id}`), 800);
+    await updateDoc(doc(db, "users", uid), { groups: arrayUnion(g.id) });
+    setCreating(false); setShowCreate(false);
+    setNewName(""); setNewTopics("");
+    await fetchAll();
+    setTimeout(() => navigate(`/chat/${g.id}`), 400);
   };
+
+  // For You = groups with matching interests
+  const userInterests = (userProfile?.interests || []).map(i => i.toLowerCase().trim());
+  const forYouGroups = groups.filter(g => {
+    if (userGroups.includes(g.id)) return false;
+    if ((g.members?.length || 0) >= 6) return false;
+    return (g.sharedInterests || []).some(i => userInterests.includes(i.toLowerCase().trim()));
+  });
 
   const filtered = groups.filter(g =>
     g.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -100,188 +102,188 @@ function Explore() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "white", display: "flex", justifyContent: "center", padding: "0 24px" }}>
-      <div style={{ width: "100%", maxWidth: "420px", paddingTop: "60px", paddingBottom: "60px" }}>
-
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
-          <button onClick={() => navigate("/home")} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer" }}>←</button>
-          <h2 style={{ margin: "0 0 0 12px", color: "#1a1a1a", fontSize: "22px" }}>Explore Groups 🔍</h2>
+    <div className="page">
+      {/* Header */}
+      <div className="header" style={{ flexDirection: "column", alignItems: "stretch", gap: "10px", padding: "14px 16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span className="header-title">Explore</span>
+          <button className="text-btn" onClick={() => setShowCreate(!showCreate)}>
+            {showCreate ? "Cancel" : "Create"}
+          </button>
         </div>
-
-        {/* Search bar */}
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by name or interest..."
-          style={{
-            width: "100%", padding: "12px 16px",
-            borderRadius: "12px", border: "1.5px solid #e0e0e0",
-            fontSize: "15px", outline: "none", marginBottom: "12px",
-            boxSizing: "border-box", color: "#1a1a1a"
-          }}
-        />
-
-        {/* Create group button */}
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          style={{
-            width: "100%", padding: "14px", background: showCreate ? "#f5f5ff" : "#4F46E5",
-            color: showCreate ? "#4F46E5" : "white",
-            border: showCreate ? "2px solid #4F46E5" : "none",
-            borderRadius: "12px", cursor: "pointer",
-            fontSize: "16px", fontWeight: "bold", marginBottom: "16px",
-            boxShadow: showCreate ? "none" : "0 4px 12px rgba(79,70,229,0.3)"
-          }}
-        >
-          {showCreate ? "Cancel" : "➕ Create a Group"}
-        </button>
-
-        {/* Create group form */}
-        {showCreate && (
-          <div style={{
-            background: "rgba(79,70,229,0.05)", borderRadius: "16px",
-            padding: "16px", marginBottom: "20px",
-            border: "1px solid rgba(79,70,229,0.15)"
-          }}>
-            <h3 style={{ margin: "0 0 14px", color: "#1a1a1a", fontSize: "16px" }}>
-              Create Interest Group
-            </h3>
-            <input
-              value={newGroupName}
-              onChange={e => setNewGroupName(e.target.value)}
-              placeholder="Group name e.g. Basketball Fans SG"
-              style={{
-                width: "100%", padding: "10px 12px", borderRadius: "10px",
-                border: "1.5px solid #e0e0e0", fontSize: "14px",
-                outline: "none", marginBottom: "10px",
-                boxSizing: "border-box", color: "#1a1a1a"
-              }}
-            />
-            <input
-              value={newGroupTopic}
-              onChange={e => setNewGroupTopic(e.target.value)}
-              placeholder="Topics e.g. basketball, sports, fitness"
-              style={{
-                width: "100%", padding: "10px 12px", borderRadius: "10px",
-                border: "1.5px solid #e0e0e0", fontSize: "14px",
-                outline: "none", marginBottom: "12px",
-                boxSizing: "border-box", color: "#1a1a1a"
-              }}
-            />
-            <p style={{ fontSize: "11px", color: "#888", marginBottom: "12px" }}>
-              Separate multiple topics with commas. You'll be the admin of this group.
-            </p>
-            <button
-              onClick={handleCreate}
-              disabled={creating}
-              style={{
-                width: "100%", padding: "12px", background: "#4F46E5",
-                color: "white", border: "none", borderRadius: "10px",
-                cursor: "pointer", fontSize: "15px", fontWeight: "bold"
-              }}
-            >
-              {creating ? "Creating..." : "Create Group 🚀"}
-            </button>
-          </div>
-        )}
-
-        {message && (
-          <div style={{
-            padding: "12px", borderRadius: "10px",
-            background: "#f5f5ff", color: "#4F46E5",
-            fontSize: "14px", marginBottom: "16px", textAlign: "center"
-          }}>
-            {message}
-          </div>
-        )}
-
-        {/* Groups list */}
-        {loading ? (
-          <p style={{ textAlign: "center", color: "#aaa" }}>Loading groups...</p>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#aaa", marginTop: "40px" }}>
-            <p style={{ fontSize: "32px" }}>🔍</p>
-            <p>No groups found!</p>
-            <p style={{ fontSize: "13px" }}>Create one above 👆</p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {filtered.map(group => {
-              const isMember = userGroups.includes(group.id);
-              const isFull = (group.members?.length || 0) >= 6;
-              const memberCount = group.members?.length || 0;
-
-              return (
-                <div key={group.id} style={{
-                  background: "rgba(79,70,229,0.04)",
-                  borderRadius: "16px", padding: "16px",
-                  border: isMember ? "1.5px solid #4F46E5" : "1px solid rgba(79,70,229,0.1)"
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ margin: "0 0 2px", color: "#1a1a1a", fontSize: "15px" }}>
-                        {group.name}
-                        {group.adminId && (
-                          <span style={{
-                            marginLeft: "6px", fontSize: "10px",
-                            background: "#f5f5ff", color: "#4F46E5",
-                            padding: "2px 6px", borderRadius: "4px"
-                          }}>
-                            Interest group
-                          </span>
-                        )}
-                      </h3>
-                      <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>
-                        {memberCount}/6 members
-                      </p>
-                    </div>
-                    {isMember && (
-                      <span style={{
-                        fontSize: "11px", color: "#4F46E5",
-                        fontWeight: "bold", background: "#f5f5ff",
-                        padding: "3px 8px", borderRadius: "6px"
-                      }}>
-                        Joined ✓
-                      </span>
-                    )}
-                  </div>
-
-                  {group.sharedInterests?.length > 0 && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "12px" }}>
-                      {group.sharedInterests.map(i => (
-                        <span key={i} style={{
-                          padding: "3px 10px", borderRadius: "20px",
-                          background: "#4F46E5", color: "white", fontSize: "11px"
-                        }}>
-                          {i}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => handleJoin(group)}
-                    style={{
-                      width: "100%", padding: "10px",
-                      background: isMember ? "#f5f5ff" : isFull ? "#f0f0f0" : "#4F46E5",
-                      color: isMember ? "#4F46E5" : isFull ? "#888" : "white",
-                      border: isMember ? "1.5px solid #4F46E5" : "none",
-                      borderRadius: "10px",
-                      cursor: isFull && !isMember ? "default" : "pointer",
-                      fontSize: "14px", fontWeight: "bold"
-                    }}
-                  >
-                    {isMember ? "💬 Open Chat" : isFull ? "🔒 Full" : "➕ Join Group"}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <div style={{ position: "relative" }}>
+          <svg style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#8e8e8e" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input className="search-input" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search interests or groups..." />
+        </div>
       </div>
+
+      {/* Create form */}
+      {showCreate && (
+        <div style={{ padding: "16px", borderBottom: "1px solid var(--border)", background: "#fafafa", animation: "fadeUp 0.2s ease" }}>
+          <p style={{ fontWeight: "700", fontSize: "15px", marginBottom: "12px", fontFamily: "Inter, sans-serif" }}>New Interest Group</p>
+          <div style={{ marginBottom: "12px" }}>
+            <label className="input-label">Group Name</label>
+            <input className="input-underline" value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Basketball Fans SG" />
+          </div>
+          <div style={{ marginBottom: "16px" }}>
+            <label className="input-label">Topics (comma separated)</label>
+            <input className="input-underline" value={newTopics} onChange={e => setNewTopics(e.target.value)} placeholder="basketball, sports, fitness" />
+          </div>
+          <button className="btn-primary" onClick={handleCreate} disabled={creating}>
+            {creating ? "Creating..." : "Create Group"}
+          </button>
+        </div>
+      )}
+
+      {message && (
+        <p style={{ padding: "10px 16px", fontSize: "13px", color: message.startsWith("❌") ? "#ed4956" : "#2e7d32", borderBottom: "1px solid var(--border)", fontFamily: "Inter, sans-serif" }}>
+          {message}
+        </p>
+      )}
+
+      {/* Random match banner */}
+      {!search && (
+        <div style={{
+          margin: "12px 16px",
+          padding: "14px 16px",
+          background: "#fafafa",
+          borderRadius: "12px",
+          border: "1px solid var(--border)",
+          display: "flex", alignItems: "center", justifyContent: "space-between"
+        }}>
+          <div>
+            <p style={{ fontWeight: "700", fontSize: "14px", margin: "0 0 2px", fontFamily: "Inter, sans-serif" }}>
+              🎲 Random Match
+            </p>
+            <p style={{ fontSize: "12px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+              Get matched based on your interests
+            </p>
+          </div>
+          <button
+            onClick={handleRandomMatch}
+            disabled={joining || userGroups.length >= 5}
+            style={{
+              background: "#0f0f0f", color: "white", border: "none",
+              borderRadius: "8px", padding: "8px 16px",
+              fontSize: "13px", fontWeight: "600", cursor: joining ? "default" : "pointer",
+              fontFamily: "Inter, sans-serif", opacity: userGroups.length >= 5 ? 0.4 : 1
+            }}
+          >
+            {joining ? "Matching..." : "Match me"}
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "60px" }}><div className="loader" /></div>
+      ) : search ? (
+        /* Search results */
+        <>
+          <p className="section-label">Search Results ({filtered.length})</p>
+          {filtered.length === 0 ? (
+            <div className="empty-state" style={{ padding: "40px" }}>
+              <p>No groups found for "{search}"</p>
+            </div>
+          ) : (
+            filtered.map((group, i) => <GroupRow key={group.id} group={group} isMember={userGroups.includes(group.id)} onJoin={() => handleJoin(group)} onOpen={() => navigate(`/chat/${group.id}`)} last={i === filtered.length - 1} />)
+          )}
+        </>
+      ) : (
+        /* For You + All tabs */
+        <>
+          {/* Tabs */}
+          <div style={{ display: "flex", borderBottom: "1px solid var(--border)", padding: "0 16px" }}>
+            {[["foryou", "For You"], ["all", "All Groups"]].map(([key, label]) => (
+              <button key={key} onClick={() => setTab(key)} style={{
+                background: "none", border: "none", padding: "10px 16px 10px 0",
+                fontSize: "14px", fontWeight: tab === key ? "700" : "400",
+                color: tab === key ? "#0f0f0f" : "#8e8e8e",
+                borderBottom: tab === key ? "2px solid #0f0f0f" : "2px solid transparent",
+                cursor: "pointer", fontFamily: "Inter, sans-serif",
+                marginBottom: "-1px"
+              }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "foryou" && (
+            forYouGroups.length === 0 ? (
+              <div className="empty-state" style={{ padding: "40px" }}>
+                <p>No groups match your interests yet.</p>
+                <p style={{ marginTop: "8px", fontSize: "13px" }}>Try Random Match or create your own!</p>
+              </div>
+            ) : (
+              <>
+                <p className="section-label">Based on your interests</p>
+                {forYouGroups.map((group, i) => (
+                  <GroupRow key={group.id} group={group} isMember={userGroups.includes(group.id)}
+                    onJoin={() => handleJoin(group)} onOpen={() => navigate(`/chat/${group.id}`)}
+                    last={i === forYouGroups.length - 1} highlight />
+                ))}
+              </>
+            )
+          )}
+
+          {tab === "all" && (
+            groups.length === 0 ? (
+              <div className="empty-state" style={{ padding: "40px" }}>
+                <p>No groups yet. Create one!</p>
+              </div>
+            ) : (
+              <>
+                <p className="section-label">All Groups ({groups.length})</p>
+                {groups.map((group, i) => (
+                  <GroupRow key={group.id} group={group} isMember={userGroups.includes(group.id)}
+                    onJoin={() => handleJoin(group)} onOpen={() => navigate(`/chat/${group.id}`)}
+                    last={i === groups.length - 1} />
+                ))}
+              </>
+            )
+          )}
+        </>
+      )}
+
+      <TabBar />
     </div>
   );
 }
 
-export default Explore;
+function GroupRow({ group, isMember, onJoin, onOpen, last, highlight }) {
+  const isFull = (group.members?.length || 0) >= 6;
+  return (
+    <>
+      <div className="list-row">
+        <div style={{
+          width: "48px", height: "48px", borderRadius: "12px",
+          background: highlight ? "#0f0f0f" : "#f5f5f5",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "20px", flexShrink: 0,
+          border: "1px solid var(--border)"
+        }}>
+          {group.type === "interest" ? "🎯" : "🤝"}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontWeight: "600", fontSize: "15px", margin: "0 0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {group.name}
+          </p>
+          <p style={{ fontSize: "13px", color: "#8e8e8e", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {group.sharedInterests?.join(", ")} · {group.members?.length || 0}/6 members
+          </p>
+        </div>
+        <button onClick={isMember ? onOpen : onJoin} style={{
+          background: isMember ? "transparent" : isFull ? "#f5f5f5" : "#0f0f0f",
+          color: isMember ? "var(--purple-dark)" : isFull ? "#8e8e8e" : "white",
+          border: isMember ? "1px solid var(--purple-dark)" : "1px solid transparent",
+          borderRadius: "8px", padding: "6px 14px",
+          fontSize: "13px", fontWeight: "600",
+          cursor: isFull && !isMember ? "default" : "pointer",
+          fontFamily: "Inter, sans-serif", flexShrink: 0
+        }}>
+          {isMember ? "Open" : isFull ? "Full" : "Join"}
+        </button>
+      </div>
+      {!last && <div className="divider" />}
+    </>
+  );
+}

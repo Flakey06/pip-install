@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
-import { auth, storage, db } from "../firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";
 
 const SKIN_TONES = ["#FDDBB4", "#F5CBA7", "#E59866", "#CA9E67", "#8D5524", "#4A2912"];
@@ -11,9 +10,7 @@ const MOUTH_STYLES = ["smile", "grin", "neutral", "smirk"];
 
 function CartoonAvatar({ options, size = 80 }) {
   const { skin, hair, hairStyle, eyes, mouth } = options;
-  const s = size;
-  const cx = s / 2;
-
+  const s = size; const cx = s / 2;
   const hairPaths = {
     short: `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} Q${cx+s*.3} ${s*.22} ${cx} ${s*.18} Q${cx-s*.3} ${s*.22} ${cx-s*.28} ${s*.38}Z`,
     long: `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} L${cx+s*.32} ${s*.75} Q${cx+s*.28} ${s*.8} ${cx+s*.22} ${s*.7} L${cx-s*.22} ${s*.7} Q${cx-s*.28} ${s*.8} ${cx-s*.32} ${s*.75}Z`,
@@ -21,14 +18,12 @@ function CartoonAvatar({ options, size = 80 }) {
     bun: `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} Q${cx+s*.3} ${s*.22} ${cx} ${s*.18} Q${cx-s*.3} ${s*.22} ${cx-s*.28} ${s*.38}Z M${cx-s*.1} ${s*.15} Q${cx} ${s*.02} ${cx+s*.1} ${s*.15} Q${cx} ${s*.22} ${cx-s*.1} ${s*.15}Z`,
     none: ""
   };
-
   const mouthPaths = {
     smile: `M${cx-s*.12} ${s*.62} Q${cx} ${s*.72} ${cx+s*.12} ${s*.62}`,
     grin: `M${cx-s*.14} ${s*.61} Q${cx} ${s*.74} ${cx+s*.14} ${s*.61} L${cx+s*.14} ${s*.64} Q${cx} ${s*.76} ${cx-s*.14} ${s*.64}Z`,
     neutral: `M${cx-s*.1} ${s*.65} L${cx+s*.1} ${s*.65}`,
     smirk: `M${cx-s*.08} ${s*.65} Q${cx+s*.06} ${s*.6} ${cx+s*.12} ${s*.63}`
   };
-
   return (
     <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
       {hairStyle !== "none" && <path d={hairPaths[hairStyle]} fill={hair} />}
@@ -44,93 +39,102 @@ function CartoonAvatar({ options, size = 80 }) {
   );
 }
 
-function AvatarPicker({ currentPhoto, onSave, onClose }) {
+// Resize image → base64 JPEG
+function resizeToBase64(file, maxPx = 200) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const ratio = Math.min(maxPx / img.width, maxPx / img.height, 1);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function saveBase64ToFirestore(base64) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not logged in");
+  await updateDoc(doc(db, "users", user.uid), { photoURL: base64 });
+  return base64;
+}
+
+export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
   const [mode, setMode] = useState("choose");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const [cartoonOptions, setCartoonOptions] = useState({
-    skin: "#FDDBB4", hair: "#4a3728", hairStyle: "short",
-    eyes: "#1a1a1a", mouth: "smile"
+  const [options, setOptions] = useState({
+    skin: "#FDDBB4", hair: "#4a3728", hairStyle: "short", eyes: "#1a1a1a", mouth: "smile"
   });
   const fileRef = useRef(null);
-
-  const uploadToStorage = async (blob, filename) => {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Not logged in!");
-    const storageRef = ref(storage, `avatars/${user.uid}/${filename}`);
-    await uploadBytes(storageRef, blob);
-    const url = await getDownloadURL(storageRef);
-    await updateDoc(doc(db, "users", user.uid), { photoURL: url });
-    return url;
-  };
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File too large! Max 5MB.");
-      return;
-    }
-    setUploading(true);
-    setError("");
+    if (file.size > 10 * 1024 * 1024) { setError("Max 10MB!"); return; }
+    setUploading(true); setError("");
     try {
-      const url = await uploadToStorage(file, "photo");
-      onSave(url);
+      const base64 = await resizeToBase64(file, 200);
+      await saveBase64ToFirestore(base64);
+      onSave(base64);
     } catch (err) {
-      console.error("Upload error:", err);
-      setError(`Upload failed: ${err.message}`);
+      console.error(err);
+      setError("Upload failed: " + err.message);
     }
     setUploading(false);
   };
 
   const saveCartoon = async () => {
-    setUploading(true);
-    setError("");
+    setUploading(true); setError("");
     try {
       const svgEl = document.querySelector("#cartoon-preview svg");
-      if (!svgEl) throw new Error("SVG not found");
+      if (!svgEl) throw new Error("Preview not found");
       const svgData = new XMLSerializer().serializeToString(svgEl);
       const canvas = document.createElement("canvas");
       canvas.width = 200; canvas.height = 200;
       const ctx = canvas.getContext("2d");
-
-      await new Promise((resolve, reject) => {
+      await new Promise((res, rej) => {
         const img = new Image();
-        img.onload = () => { ctx.drawImage(img, 0, 0, 200, 200); resolve(); };
-        img.onerror = reject;
+        img.onload = () => { ctx.drawImage(img, 0, 0, 200, 200); res(); };
+        img.onerror = rej;
         img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
       });
-
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
-      const url = await uploadToStorage(blob, "cartoon");
-      onSave(url);
+      const base64 = canvas.toDataURL("image/png", 0.85);
+      await saveBase64ToFirestore(base64);
+      onSave(base64);
     } catch (err) {
-      console.error("Cartoon save error:", err);
-      setError(`Failed to save: ${err.message}`);
+      console.error(err);
+      setError("Failed: " + err.message);
     }
     setUploading(false);
   };
 
   const Swatch = ({ color, selected, onClick }) => (
     <div onClick={onClick} style={{
-      width: "28px", height: "28px", borderRadius: "50%",
-      background: color, cursor: "pointer", flexShrink: 0,
-      border: selected ? "3px solid var(--purple-dark)" : "2px solid rgba(0,0,0,0.1)",
-      boxShadow: selected ? "0 0 0 2px var(--purple-light)" : "none",
-      transition: "all 0.15s ease"
+      width: "28px", height: "28px", borderRadius: "50%", background: color,
+      cursor: "pointer", flexShrink: 0,
+      border: selected ? "3px solid #0f0f0f" : "2px solid #dbdbdb",
+      boxSizing: "border-box"
     }} />
   );
 
   const StyleBtn = ({ label, selected, onClick }) => (
     <button onClick={onClick} style={{
-      padding: "6px 14px", borderRadius: "20px", cursor: "pointer",
-      fontSize: "13px", fontWeight: "700",
-      background: selected ? "var(--purple-dark)" : "white",
-      color: selected ? "white" : "var(--purple-dark)",
-      border: "2px solid var(--border-sketch)",
-      fontFamily: "'Plus Jakarta Sans', sans-serif",
-      transition: "all 0.15s ease",
-      boxShadow: selected ? "2px 2px 0px var(--purple-dark)" : "none"
+      padding: "5px 12px", borderRadius: "20px", cursor: "pointer",
+      fontSize: "12px", fontWeight: "600",
+      background: selected ? "#0f0f0f" : "white",
+      color: selected ? "white" : "#0f0f0f",
+      border: "1px solid #dbdbdb",
+      fontFamily: "Inter, sans-serif"
     }}>
       {label}
     </button>
@@ -140,139 +144,102 @@ function AvatarPicker({ currentPhoto, onSave, onClose }) {
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       background: "rgba(0,0,0,0.5)", zIndex: 300,
-      display: "flex", alignItems: "flex-end", justifyContent: "center",
-      animation: "fadeIn 0.2s ease"
+      display: "flex", alignItems: "flex-end", justifyContent: "center"
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "var(--bg)", borderRadius: "24px 24px 0 0",
-        padding: "24px", width: "100%", maxWidth: "480px",
-        paddingBottom: "40px", maxHeight: "90vh", overflowY: "auto",
-        border: "1.5px solid var(--border-sketch)"
+        background: "white", borderRadius: "16px 16px 0 0",
+        padding: "20px", width: "100%", maxWidth: "480px",
+        paddingBottom: "40px", maxHeight: "88vh", overflowY: "auto"
       }}>
-        <div style={{ width: "40px", height: "4px", background: "var(--border-sketch)", borderRadius: "2px", margin: "0 auto 20px" }} />
-
-        <h3 className="display-font" style={{ fontSize: "20px", color: "var(--text)", marginBottom: "20px", textAlign: "center" }}>
-          Choose your avatar 🎨
+        <div style={{ width: "36px", height: "4px", background: "#dbdbdb", borderRadius: "2px", margin: "0 auto 16px" }} />
+        <h3 style={{ fontSize: "17px", fontWeight: "700", color: "#0f0f0f", marginBottom: "20px", textAlign: "center", fontFamily: "Inter, sans-serif" }}>
+          Change Profile Photo
         </h3>
 
         {error && (
-          <div style={{
-            padding: "10px 14px", borderRadius: "10px", marginBottom: "14px",
-            background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
-            color: "#DC2626", fontSize: "13px", fontWeight: "600"
-          }}>
+          <p style={{ color: "#ed4956", fontSize: "13px", textAlign: "center", marginBottom: "12px" }}>
             ⚠️ {error}
-          </div>
+          </p>
         )}
 
         {mode === "choose" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <button className="btn-primary" onClick={() => setMode("cartoon")}>
-              🎨 Build a cartoon avatar
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {[
+              { label: "Upload Photo", action: () => fileRef.current.click() },
+              { label: "Build Cartoon Avatar", action: () => setMode("cartoon") },
+            ].map((item, i) => (
+              <button key={item.label} onClick={item.action} style={{
+                padding: "16px", background: "white", border: "none",
+                borderBottom: i === 0 ? "1px solid #dbdbdb" : "none",
+                fontSize: "15px", fontWeight: "600", cursor: "pointer",
+                color: "#0f0f0f", fontFamily: "Inter, sans-serif",
+                textAlign: "center"
+              }}>
+                {item.label}
+              </button>
+            ))}
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleUpload} />
+            {uploading && <p style={{ textAlign: "center", color: "#8e8e8e", marginTop: "12px", fontSize: "13px" }}>Processing...</p>}
+            <button onClick={onClose} style={{
+              padding: "16px", background: "white", border: "none",
+              borderTop: "8px solid #fafafa",
+              fontSize: "15px", cursor: "pointer", color: "#ed4956",
+              fontFamily: "Inter, sans-serif", fontWeight: "600", textAlign: "center"
+            }}>
+              Cancel
             </button>
-            <button className="btn-secondary" onClick={() => fileRef.current.click()}>
-              📷 Upload a photo
-            </button>
-            <input
-              ref={fileRef} type="file" accept="image/*"
-              style={{ display: "none" }} onChange={handleUpload}
-            />
-            {uploading && (
-              <div style={{ textAlign: "center", color: "var(--purple-dark)", fontWeight: "600", padding: "10px" }}>
-                ⏳ Uploading...
-              </div>
-            )}
           </div>
         )}
 
         {mode === "cartoon" && (
           <div>
-            {/* Preview */}
             <div id="cartoon-preview" style={{ textAlign: "center", marginBottom: "20px" }}>
               <div style={{
-                width: "100px", height: "100px", borderRadius: "50%",
+                width: "96px", height: "96px", borderRadius: "50%",
                 margin: "0 auto", overflow: "hidden",
-                border: "3px solid var(--purple-dark)",
-                boxShadow: "4px 4px 0px var(--border-sketch)"
+                border: "1px solid #dbdbdb"
               }}>
-                <CartoonAvatar options={cartoonOptions} size={100} />
+                <CartoonAvatar options={options} size={96} />
               </div>
-              <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "8px" }}>
-                Live preview
-              </p>
+              <p style={{ fontSize: "12px", color: "#8e8e8e", marginTop: "8px", fontFamily: "Inter, sans-serif" }}>Live preview</p>
             </div>
 
-            {/* Skin tone */}
-            <div style={{ marginBottom: "16px" }}>
-              <p style={{ fontWeight: "700", fontSize: "13px", color: "var(--text)", marginBottom: "8px" }}>Skin tone</p>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {SKIN_TONES.map(c => (
-                  <Swatch key={c} color={c} selected={cartoonOptions.skin === c}
-                    onClick={() => setCartoonOptions(p => ({ ...p, skin: c }))} />
-                ))}
+            {[
+              { label: "Skin tone", items: SKIN_TONES, key: "skin", type: "swatch" },
+              { label: "Hair style", items: HAIR_STYLES, key: "hairStyle", type: "btn" },
+              { label: "Hair color", items: HAIR_COLORS, key: "hair", type: "swatch" },
+              { label: "Eye color", items: EYE_COLORS, key: "eyes", type: "swatch" },
+              { label: "Mouth", items: MOUTH_STYLES, key: "mouth", type: "btn" },
+            ].map(section => (
+              <div key={section.key} style={{ marginBottom: "16px" }}>
+                <p style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase", color: "#8e8e8e", marginBottom: "8px", fontFamily: "Inter, sans-serif" }}>
+                  {section.label}
+                </p>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  {section.items.map(item => (
+                    section.type === "swatch"
+                      ? <Swatch key={item} color={item} selected={options[section.key] === item} onClick={() => setOptions(p => ({ ...p, [section.key]: item }))} />
+                      : <StyleBtn key={item} label={item} selected={options[section.key] === item} onClick={() => setOptions(p => ({ ...p, [section.key]: item }))} />
+                  ))}
+                </div>
               </div>
-            </div>
+            ))}
 
-            {/* Hair style */}
-            <div style={{ marginBottom: "16px" }}>
-              <p style={{ fontWeight: "700", fontSize: "13px", color: "var(--text)", marginBottom: "8px" }}>Hair style</p>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {HAIR_STYLES.map(s => (
-                  <StyleBtn key={s} label={s} selected={cartoonOptions.hairStyle === s}
-                    onClick={() => setCartoonOptions(p => ({ ...p, hairStyle: s }))} />
-                ))}
-              </div>
-            </div>
-
-            {/* Hair color */}
-            <div style={{ marginBottom: "16px" }}>
-              <p style={{ fontWeight: "700", fontSize: "13px", color: "var(--text)", marginBottom: "8px" }}>Hair color</p>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {HAIR_COLORS.map(c => (
-                  <Swatch key={c} color={c} selected={cartoonOptions.hair === c}
-                    onClick={() => setCartoonOptions(p => ({ ...p, hair: c }))} />
-                ))}
-              </div>
-            </div>
-
-            {/* Eye color */}
-            <div style={{ marginBottom: "16px" }}>
-              <p style={{ fontWeight: "700", fontSize: "13px", color: "var(--text)", marginBottom: "8px" }}>Eye color</p>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {EYE_COLORS.map(c => (
-                  <Swatch key={c} color={c} selected={cartoonOptions.eyes === c}
-                    onClick={() => setCartoonOptions(p => ({ ...p, eyes: c }))} />
-                ))}
-              </div>
-            </div>
-
-            {/* Mouth */}
-            <div style={{ marginBottom: "24px" }}>
-              <p style={{ fontWeight: "700", fontSize: "13px", color: "var(--text)", marginBottom: "8px" }}>Mouth</p>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {MOUTH_STYLES.map(s => (
-                  <StyleBtn key={s} label={s} selected={cartoonOptions.mouth === s}
-                    onClick={() => setCartoonOptions(p => ({ ...p, mouth: s }))} />
-                ))}
-              </div>
-            </div>
-
-            {error && (
-              <div style={{
-                padding: "10px 14px", borderRadius: "10px", marginBottom: "14px",
-                background: "rgba(239,68,68,0.08)", color: "#DC2626",
-                fontSize: "13px", fontWeight: "600"
+            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <button onClick={() => setMode("choose")} style={{
+                flex: 1, padding: "12px", background: "#fafafa",
+                border: "1px solid #dbdbdb", borderRadius: "10px",
+                fontSize: "14px", fontWeight: "600", cursor: "pointer",
+                fontFamily: "Inter, sans-serif"
+              }}>Back</button>
+              <button onClick={saveCartoon} disabled={uploading} style={{
+                flex: 1, padding: "12px", background: "#0f0f0f",
+                border: "none", borderRadius: "10px", color: "white",
+                fontSize: "14px", fontWeight: "600", cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
+                opacity: uploading ? 0.6 : 1
               }}>
-                ⚠️ {error}
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button className="btn-secondary" onClick={() => setMode("choose")} style={{ flex: 1 }}>
-                ← Back
-              </button>
-              <button className="btn-primary" onClick={saveCartoon} disabled={uploading} style={{ flex: 1 }}>
-                {uploading ? "Saving..." : "Save Avatar ✅"}
+                {uploading ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
@@ -281,5 +248,3 @@ function AvatarPicker({ currentPhoto, onSave, onClose }) {
     </div>
   );
 }
-
-export default AvatarPicker;

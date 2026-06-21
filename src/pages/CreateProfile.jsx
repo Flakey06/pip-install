@@ -28,7 +28,7 @@ export default function CreateProfile() {
     setSaving(true);
     const user = auth.currentUser;
 
-    // Use custom avatar, Google photo, or DiceBear as fallback
+    //Custom profile pic
     const finalAvatar = avatarUrl ||
       user.photoURL ||
       `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(username)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
@@ -58,7 +58,7 @@ export default function CreateProfile() {
               fontFamily: "'Syne', sans-serif", fontSize: "28px",
               fontWeight: "800", color: "var(--text)", marginBottom: "6px"
             }}>
-              Create Profile 👤
+              Create Profile
             </h1>
             <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
               Tell us about yourself to find your people

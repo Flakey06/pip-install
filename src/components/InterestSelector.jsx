@@ -179,7 +179,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
       </div>
 
       <p style={{ fontSize: "12px", color: "#888", marginTop: "8px" }}>
-        "AI", "ai", "A I" are all treated the same ✅
+        "AI", "ai", "A I" are all treated the same ~
       </p>
 
       {/* Add custom interest modal */}

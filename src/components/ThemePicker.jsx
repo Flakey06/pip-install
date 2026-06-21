@@ -77,7 +77,7 @@ export default function ThemePicker({ onClose }) {
         </div>
 
         <button className="btn-primary" onClick={onClose} style={{ fontSize: "15px" }}>
-          Done ✅
+          Done !!
         </button>
       </div>
     </div>

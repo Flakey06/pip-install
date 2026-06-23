@@ -8,6 +8,7 @@ import TabBar from "../components/TabBar";
 
 export default function Groups() {
   const [groups, setGroups] = useState([]);
+  const [maxGroups, setMaxGroups] = useState(5);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -20,6 +21,7 @@ export default function Groups() {
       const groupDocs = await Promise.all((data.groups || []).map(id => getDoc(doc(db, "groups", id))));
       setGroups(groupDocs.filter(d => d.exists()).map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
+      setMaxGroups(data.maxGroups || 5);
     });
     return () => unsubscribe();
   }, []);
@@ -43,7 +45,7 @@ export default function Groups() {
       <div className="header">
         <span className="header-title">Messages</span>
         <span style={{ fontSize: "12px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>
-          {groups.length}/5 groups
+          {groups.length}/{maxGroups} groups
         </span>
       </div>
 
@@ -90,12 +92,16 @@ export default function Groups() {
               <div className="list-row" onClick={() => canChat && navigate(`/chat/${group.id}`)}>
                 <div style={{
                   width: "52px", height: "52px", borderRadius: "50%",
-                  background: canChat ? "#ffffff" : "#f0f0f0",
+                  background: "#f0f0f0", flexShrink: 0,
+                  border: "1px solid var(--border)",
+                  overflow: "hidden",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "20px", flexShrink: 0,
-                  border: "1px solid var(--border)"
+                  fontSize: "20px"
                 }}>
-                  {canChat ? "yap." : "..."}
+                  {group.photoURL
+                    ? <img src={group.photoURL} alt={group.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : canChat ? "💬" : "⏳"
+                  }
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

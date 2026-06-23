@@ -38,8 +38,8 @@ export default function Explore() {
 
   const handleJoin = async (group) => {
     const uid = auth.currentUser.uid;
-    if (userGroups.includes(group.id)) { navigate(`/chat/${group.id}`); return; }
-    if (userGroups.length >= 5) { setMessage("You're in 5 groups — leave one first!"); return; }
+    if (userGroups.includes(group.id)) { navigate(`/chat/${group.id}`); return; } 
+    if (userGroups.length >= (userProfile?.maxGroups || 5)) { setMessage(`❌ You're in ${userProfile?.maxGroups || 5} groups — leave one first!`); return; }
     if ((group.members?.length || 0) >= 6) { setMessage("This group is full!"); return; }
     await updateDoc(doc(db, "groups", group.id), {
       members: arrayUnion(uid),
@@ -53,7 +53,7 @@ export default function Explore() {
 
   const handleRandomMatch = async () => {
     if (!userProfile) return;
-    if (userGroups.length >= 5) { setMessage("You're in 5 groups — leave one first!"); return; }
+    if (userGroups.length >= (userProfile?.maxGroups || 5)) { setMessage(`❌ You're in ${userProfile?.maxGroups || 5} groups — leave one first!`); return; }
     setJoining(true); setMessage("");
     const result = await joinRandomGroup(userProfile);
     if (result.success) {
@@ -72,7 +72,7 @@ export default function Explore() {
 
   const handleCreate = async () => {
     if (!newName.trim() || !newTopics.trim()) { alert("Fill in all fields!"); return; }
-    if (userGroups.length >= 5) { setMessage("You're in 5 groups — leave one first!"); return; }
+    if (userGroups.length >= (userProfile?.maxGroups || 5)) { setMessage(`❌ You're in ${userProfile?.maxGroups || 5} groups — leave one first!`); return; }
     setCreating(true);
     const uid = auth.currentUser.uid;
     const topics = newTopics.split(",").map(t => t.toLowerCase().trim()).filter(Boolean);
@@ -161,12 +161,12 @@ export default function Explore() {
           </div>
           <button
             onClick={handleRandomMatch}
-            disabled={joining || userGroups.length >= 5}
+            disabled={joining || userGroups.length >= (userProfile?.maxGroups || 5)}
             style={{
               background: "#0f0f0f", color: "white", border: "none",
               borderRadius: "8px", padding: "8px 16px",
               fontSize: "13px", fontWeight: "600", cursor: joining ? "default" : "pointer",
-              fontFamily: "Inter, sans-serif", opacity: userGroups.length >= 5 ? 0.4 : 1
+              fontFamily: "Inter, sans-serif", opacity: userGroups.length >= (userProfile?.maxGroups || 5) ? 0.4 : 1
             }}
           >
             {joining ? "Matching..." : "Match me"}

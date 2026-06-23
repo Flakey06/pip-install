@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useTheme } from "./hooks/useTheme";
+import { auth } from "./firebase";
 import Login from "./pages/Login";
 import CreateProfile from "./pages/CreateProfile";
 import Home from "./pages/Home";
@@ -14,24 +15,30 @@ import Calendar from "./pages/Calendar";
 import GroupInfo from "./pages/GroupInfo";
 import Credits from "./pages/Credits";
 
+function ProtectedRoute({ children }) {
+  if (!auth.currentUser) return <Navigate to="/" replace />;
+  return children;
+}
+
 function App() {
   useTheme();
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/create-profile" element={<CreateProfile />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/edit-profile" element={<EditProfile />} />
-        <Route path="/chat/:groupId" element={<GroupChat />} />
-        <Route path="/group-info/:groupId" element={<GroupInfo />} />
-        <Route path="/groups" element={<Groups />} />
-        <Route path="/friends" element={<Friends />} />
-        <Route path="/explore" element={<Explore />} />
-        <Route path="/private-chat/:friendId" element={<PrivateChat />} />
-        <Route path="/calendar/:groupId" element={<GroupCalendar />} />
-        <Route path="/calendar" element={<Calendar />} />
-        <Route path="/credits" element={<Credits />} />
+        <Route path="/create-profile" element={<ProtectedRoute><CreateProfile /></ProtectedRoute>} />
+        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+        <Route path="/chat/:groupId" element={<ProtectedRoute><GroupChat /></ProtectedRoute>} />
+        <Route path="/group-info/:groupId" element={<ProtectedRoute><GroupInfo /></ProtectedRoute>} />
+        <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+        <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
+        <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+        <Route path="/private-chat/:friendId" element={<ProtectedRoute><PrivateChat /></ProtectedRoute>} />
+        <Route path="/calendar/:groupId" element={<ProtectedRoute><GroupCalendar /></ProtectedRoute>} />
+        <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+        <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

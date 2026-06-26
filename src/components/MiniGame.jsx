@@ -1,23 +1,27 @@
 // file use: In-chat games — Would You Rather + Trivia, earns coins
-import { awardCredits } from "../hooks/useCredits";
 import { useState, useEffect } from "react";
 import { auth, rtdb } from "../firebase";
 import { ref, set, onValue, remove } from "firebase/database";
 import { WOULD_YOU_RATHER, TRIVIA } from "../utils/gameData";
+import { awardCredits } from "../hooks/useCredits";
 
 export default function MiniGame({ groupId, groupName, members, onClose }) {
-  const [screen, setScreen] = useState("menu"); 
+  const [screen, setScreen] = useState("menu");
   const [wyrQuestion, setWyrQuestion] = useState(null);
   const [wyrVotes, setWyrVotes] = useState({ a: [], b: [] });
   const [triviaQuestion, setTriviaQuestion] = useState(null);
   const [triviaAnswers, setTriviaAnswers] = useState({});
   const [triviaRevealed, setTriviaRevealed] = useState(false);
   const [myVote, setMyVote] = useState(null);
-  const me = auth.currentUser?.uid;
-  const myUsername = members.find(m => m.uid === me)?.username || "You";
-  const isHost = members[0]?.uid === me;
+  const [coinToast, setCoinToast] = useState("");
 
+  const me = auth.currentUser?.uid;
   const gameRef = ref(rtdb, `games/${groupId}`);
+
+  const showCoinToast = (msg) => {
+    setCoinToast(msg);
+    setTimeout(() => setCoinToast(""), 2500);
+  };
 
   useEffect(() => {
     const unsubscribe = onValue(gameRef, (snap) => {
@@ -41,13 +45,7 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
 
   const startWYR = async () => {
     const q = WOULD_YOU_RATHER[Math.floor(Math.random() * WOULD_YOU_RATHER.length)];
-    await set(gameRef, {
-      type: "wyr",
-      question: q,
-      votes: { a: [], b: [] },
-      startedBy: me,
-      startedAt: Date.now()
-    });
+    await set(gameRef, { type: "wyr", question: q, votes: { a: [], b: [] }, startedBy: me, startedAt: Date.now() });
   };
 
   const voteWYR = async (side) => {
@@ -59,51 +57,39 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
     newVotes[side] = [...newVotes[side], me];
     await set(ref(rtdb, `games/${groupId}/votes`), newVotes);
     setMyVote(side);
+    await awardCredits("wyr_vote");
+    showCoinToast("🪙 +2 coins for voting!");
   };
 
   const newWYR = async () => {
     const q = WOULD_YOU_RATHER[Math.floor(Math.random() * WOULD_YOU_RATHER.length)];
-    await set(gameRef, {
-      type: "wyr",
-      question: q,
-      votes: { a: [], b: [] },
-      startedBy: me,
-      startedAt: Date.now()
-    });
+    await set(gameRef, { type: "wyr", question: q, votes: { a: [], b: [] }, startedBy: me, startedAt: Date.now() });
     setMyVote(null);
   };
 
   const startTrivia = async () => {
     const q = TRIVIA[Math.floor(Math.random() * TRIVIA.length)];
-    await set(gameRef, {
-      type: "trivia",
-      question: q,
-      answers: {},
-      revealed: false,
-      startedBy: me,
-      startedAt: Date.now()
-    });
+    await set(gameRef, { type: "trivia", question: q, answers: {}, revealed: false, startedBy: me, startedAt: Date.now() });
   };
 
   const answerTrivia = async (idx) => {
     if (triviaAnswers[me] !== undefined) return;
     await set(ref(rtdb, `games/${groupId}/answers/${me}`), idx);
+    await awardCredits("trivia_play");
+    showCoinToast("🪙 +3 coins for playing!");
   };
 
   const revealTrivia = async () => {
     await set(ref(rtdb, `games/${groupId}/revealed`), true);
+    if (triviaAnswers[me] === triviaQuestion?.answer) {
+      await awardCredits("trivia_correct");
+      showCoinToast("🪙 +10 coins — correct answer!");
+    }
   };
 
   const newTrivia = async () => {
     const q = TRIVIA[Math.floor(Math.random() * TRIVIA.length)];
-    await set(gameRef, {
-      type: "trivia",
-      question: q,
-      answers: {},
-      revealed: false,
-      startedBy: me,
-      startedAt: Date.now()
-    });
+    await set(gameRef, { type: "trivia", question: q, answers: {}, revealed: false, startedBy: me, startedAt: Date.now() });
   };
 
   const endGame = async () => {
@@ -116,250 +102,220 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
   const totalVotes = (wyrVotes.a?.length || 0) + (wyrVotes.b?.length || 0);
   const pctA = totalVotes > 0 ? Math.round((wyrVotes.a?.length || 0) / totalVotes * 100) : 50;
   const pctB = 100 - pctA;
-
   const getUserName = (uid) => members.find(m => m.uid === uid)?.username || "Someone";
 
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       background: "rgba(0,0,0,0.55)", zIndex: 300,
-      display: "flex", alignItems: "flex-end", justifyContent: "center",
-      animation: "fadeIn 0.2s ease"
+      display: "flex", alignItems: "flex-end", justifyContent: "center"
     }} onClick={screen === "menu" ? onClose : undefined}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: "var(--bg)", borderRadius: "24px 24px 0 0",
-        padding: "24px", width: "100%", maxWidth: "480px",
-        paddingBottom: "48px", maxHeight: "85vh", overflowY: "auto",
-        border: "1.5px solid var(--border-sketch)",
-        animation: "fadeUp 0.3s ease"
-      }}>
-        <div style={{ width: "40px", height: "4px", background: "var(--border-sketch)", borderRadius: "2px", margin: "0 auto 20px" }} />
 
+      {/* Coin toast */}
+      {coinToast && (
+        <div style={{
+          position: "fixed", top: "40px", left: "50%",
+          transform: "translateX(-50%)",
+          background: "#0f0f0f", color: "white",
+          padding: "12px 24px", borderRadius: "24px",
+          fontSize: "15px", fontWeight: "700",
+          fontFamily: "Inter, sans-serif",
+          zIndex: 500, whiteSpace: "nowrap",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+          animation: "fadeUp 0.3s ease"
+        }}>
+          {coinToast}
+        </div>
+      )}
+
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "white", borderRadius: "20px 20px 0 0",
+        padding: "20px 20px 48px", width: "100%", maxWidth: "480px",
+        maxHeight: "88vh", overflowY: "auto"
+      }}>
+        <div style={{ width: "36px", height: "4px", background: "#e0e0e0", borderRadius: "2px", margin: "0 auto 20px" }} />
+
+        {/* ── MENU ── */}
         {screen === "menu" && (
           <>
             <div style={{ textAlign: "center", marginBottom: "24px" }}>
-              <div style={{ fontSize: "48px", marginBottom: "8px" }}>🎮</div>
-              <h3 className="display-font" style={{ fontSize: "22px", color: "var(--text)", marginBottom: "4px" }}>
+              <p style={{ fontSize: "40px", margin: "0 0 8px" }}>🎮</p>
+              <h3 style={{ fontSize: "20px", fontWeight: "700", margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>
                 Mini Games
               </h3>
-              <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                Play with your group in real time!
+              <p style={{ fontSize: "13px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+                Play with your group · earn 🪙 coins
               </p>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
-              <button onClick={startWYR} style={{
-                display: "flex", alignItems: "center", gap: "16px",
-                padding: "18px", borderRadius: "16px",
-                background: "rgba(255,255,255,0.8)",
-                border: "1.5px solid var(--border-sketch)",
-                boxShadow: "3px 3px 0px var(--border)",
-                cursor: "pointer", textAlign: "left",
-                transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
-                fontFamily: "'Plus Jakarta Sans', sans-serif"
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "5px 5px 0px var(--border-sketch)"; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "3px 3px 0px var(--border)"; }}
-              >
-                <div style={{ fontSize: "36px", flexShrink: 0 }}></div>
-                <div>
-                  <p style={{ margin: "0 0 4px", fontWeight: "800", fontSize: "16px", color: "var(--text)" }}>
-                    Would You Rather
-                  </p>
-                  <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
-                    Vote between two tricky scenarios
-                  </p>
-                </div>
-              </button>
-
-              <button onClick={startTrivia} style={{
-                display: "flex", alignItems: "center", gap: "16px",
-                padding: "18px", borderRadius: "16px",
-                background: "rgba(255,255,255,0.8)",
-                border: "1.5px solid var(--border-sketch)",
-                boxShadow: "3px 3px 0px var(--border)",
-                cursor: "pointer", textAlign: "left",
-                transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
-                fontFamily: "'Plus Jakarta Sans', sans-serif"
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "5px 5px 0px var(--border-sketch)"; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "3px 3px 0px var(--border)"; }}
-              >
-                <div style={{ fontSize: "36px", flexShrink: 0 }}>🧠</div>
-                <div>
-                  <p style={{ margin: "0 0 4px", fontWeight: "800", fontSize: "16px", color: "var(--text)" }}>
-                    Trivia Quiz
-                  </p>
-                  <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
-                    Answer questions and see who gets it right
-                  </p>
-                </div>
-              </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+              {[
+                { icon: "🤔", title: "Would You Rather", desc: "Vote between two scenarios · +2 🪙", action: startWYR },
+                { icon: "🧠", title: "Trivia Quiz", desc: "Answer questions · +3 🪙, +10 🪙 if correct", action: startTrivia },
+              ].map(item => (
+                <button key={item.title} onClick={item.action} style={{
+                  display: "flex", alignItems: "center", gap: "16px",
+                  padding: "16px", borderRadius: "14px",
+                  background: "#fafafa", border: "1px solid #e8e8e8",
+                  cursor: "pointer", textAlign: "left",
+                  fontFamily: "Inter, sans-serif"
+                }}>
+                  <span style={{ fontSize: "32px", flexShrink: 0 }}>{item.icon}</span>
+                  <div>
+                    <p style={{ margin: "0 0 3px", fontWeight: "700", fontSize: "15px", color: "#0f0f0f" }}>{item.title}</p>
+                    <p style={{ margin: 0, fontSize: "12px", color: "#8e8e8e" }}>{item.desc}</p>
+                  </div>
+                </button>
+              ))}
             </div>
 
-            <button className="btn-secondary" onClick={onClose}>Close</button>
+            <button onClick={onClose} style={{
+              width: "100%", padding: "13px", background: "#fafafa",
+              border: "1px solid #e8e8e8", borderRadius: "12px",
+              fontSize: "14px", fontWeight: "600", cursor: "pointer",
+              fontFamily: "Inter, sans-serif"
+            }}>
+              Close
+            </button>
           </>
         )}
 
+        {/* ── WOULD YOU RATHER ── */}
         {screen === "wyr" && wyrQuestion && (
           <>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-              <h3 className="display-font" style={{ fontSize: "18px", color: "var(--text)", margin: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <h3 style={{ fontSize: "17px", fontWeight: "700", margin: 0, fontFamily: "Inter, sans-serif" }}>
                 🤔 Would You Rather
               </h3>
-              <button onClick={endGame} style={{
-                background: "none", border: "none", color: "var(--text-muted)",
-                fontSize: "20px", cursor: "pointer"
-              }}>✕</button>
+              <button onClick={endGame} style={{ background: "none", border: "none", color: "#8e8e8e", fontSize: "20px", cursor: "pointer" }}>✕</button>
             </div>
-
-            <p style={{ textAlign: "center", fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>
+            <p style={{ fontSize: "12px", color: "#8e8e8e", margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
               {totalVotes}/{members.length} voted
+              {!myVote && <span style={{ color: "#0f0f0f", fontWeight: "600" }}> · +2 🪙 for voting</span>}
             </p>
 
+            {/* Option A */}
             <button onClick={() => voteWYR("a")} disabled={!!myVote} style={{
-              width: "100%", padding: "18px", borderRadius: "16px",
-              background: myVote === "a"
-                ? "linear-gradient(135deg, var(--purple-mid), var(--purple-dark))"
-                : "rgba(255,255,255,0.85)",
-              border: myVote === "a" ? "none" : "1.5px solid var(--border-sketch)",
-              boxShadow: myVote === "a" ? "3px 3px 0px var(--purple-dark)" : "3px 3px 0px var(--border)",
+              width: "100%", padding: "16px", borderRadius: "14px",
+              background: myVote === "a" ? "#0f0f0f" : "white",
+              border: myVote === "a" ? "none" : "1.5px solid #e0e0e0",
               cursor: myVote ? "default" : "pointer",
-              marginBottom: "12px", textAlign: "left",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              transition: "all 0.2s ease"
+              marginBottom: "10px", textAlign: "left",
+              fontFamily: "Inter, sans-serif", transition: "all 0.2s"
             }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                 <span style={{
-                  fontSize: "13px", fontWeight: "800",
-                  color: myVote === "a" ? "rgba(255,255,255,0.8)" : "var(--purple-dark)",
-                  background: myVote === "a" ? "rgba(255,255,255,0.2)" : "var(--purple-light)",
-                  padding: "3px 10px", borderRadius: "20px", flexShrink: 0
+                  fontSize: "11px", fontWeight: "800", padding: "3px 8px",
+                  borderRadius: "6px", flexShrink: 0,
+                  background: myVote === "a" ? "rgba(255,255,255,0.2)" : "#f0f0f0",
+                  color: myVote === "a" ? "white" : "#0f0f0f"
                 }}>A</span>
-                <p style={{
-                  margin: 0, fontSize: "15px", fontWeight: "600", lineHeight: "1.5",
-                  color: myVote === "a" ? "white" : "var(--text)", textAlign: "left"
-                }}>
+                <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", lineHeight: "1.5", color: myVote === "a" ? "white" : "#0f0f0f" }}>
                   {wyrQuestion.a}
                 </p>
               </div>
-
               {myVote && (
-                <div style={{ marginTop: "12px" }}>
+                <div style={{ marginTop: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "11px", color: myVote === "a" ? "rgba(255,255,255,0.8)" : "var(--text-muted)" }}>
+                    <span style={{ fontSize: "11px", color: myVote === "a" ? "rgba(255,255,255,0.7)" : "#8e8e8e" }}>
                       {wyrVotes.a?.map(getUserName).join(", ") || "No votes"}
                     </span>
-                    <span style={{ fontSize: "13px", fontWeight: "800", color: myVote === "a" ? "white" : "var(--purple-dark)" }}>
-                      {pctA}%
-                    </span>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: myVote === "a" ? "white" : "#0f0f0f" }}>{pctA}%</span>
                   </div>
-                  <div style={{ height: "6px", borderRadius: "3px", background: myVote === "a" ? "rgba(255,255,255,0.3)" : "var(--purple-light)", overflow: "hidden" }}>
-                    <div style={{ width: `${pctA}%`, height: "100%", borderRadius: "3px", background: myVote === "a" ? "white" : "var(--purple-dark)", transition: "width 0.5s ease" }} />
+                  <div style={{ height: "4px", borderRadius: "2px", background: myVote === "a" ? "rgba(255,255,255,0.3)" : "#f0f0f0", overflow: "hidden" }}>
+                    <div style={{ width: `${pctA}%`, height: "100%", borderRadius: "2px", background: myVote === "a" ? "white" : "#0f0f0f", transition: "width 0.5s ease" }} />
                   </div>
                 </div>
               )}
             </button>
 
-            <div style={{ textAlign: "center", margin: "4px 0 12px" }}>
-              <span className="sketch-font" style={{ fontSize: "20px", color: "var(--purple-dark)", fontWeight: "700" }}>OR</span>
+            <div style={{ textAlign: "center", margin: "4px 0 10px" }}>
+              <span style={{ fontSize: "13px", fontWeight: "700", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>OR</span>
             </div>
 
+            {/* Option B */}
             <button onClick={() => voteWYR("b")} disabled={!!myVote} style={{
-              width: "100%", padding: "18px", borderRadius: "16px",
-              background: myVote === "b"
-                ? "linear-gradient(135deg, var(--purple-mid), var(--purple-dark))"
-                : "rgba(255,255,255,0.85)",
-              border: myVote === "b" ? "none" : "1.5px solid var(--border-sketch)",
-              boxShadow: myVote === "b" ? "3px 3px 0px var(--purple-dark)" : "3px 3px 0px var(--border)",
+              width: "100%", padding: "16px", borderRadius: "14px",
+              background: myVote === "b" ? "#0f0f0f" : "white",
+              border: myVote === "b" ? "none" : "1.5px solid #e0e0e0",
               cursor: myVote ? "default" : "pointer",
               marginBottom: "16px", textAlign: "left",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              transition: "all 0.2s ease"
+              fontFamily: "Inter, sans-serif", transition: "all 0.2s"
             }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                 <span style={{
-                  fontSize: "13px", fontWeight: "800",
-                  color: myVote === "b" ? "rgba(255,255,255,0.8)" : "var(--purple-dark)",
-                  background: myVote === "b" ? "rgba(255,255,255,0.2)" : "var(--purple-light)",
-                  padding: "3px 10px", borderRadius: "20px", flexShrink: 0
+                  fontSize: "11px", fontWeight: "800", padding: "3px 8px",
+                  borderRadius: "6px", flexShrink: 0,
+                  background: myVote === "b" ? "rgba(255,255,255,0.2)" : "#f0f0f0",
+                  color: myVote === "b" ? "white" : "#0f0f0f"
                 }}>B</span>
-                <p style={{
-                  margin: 0, fontSize: "15px", fontWeight: "600", lineHeight: "1.5",
-                  color: myVote === "b" ? "white" : "var(--text)", textAlign: "left"
-                }}>
+                <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", lineHeight: "1.5", color: myVote === "b" ? "white" : "#0f0f0f" }}>
                   {wyrQuestion.b}
                 </p>
               </div>
-
               {myVote && (
-                <div style={{ marginTop: "12px" }}>
+                <div style={{ marginTop: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "11px", color: myVote === "b" ? "rgba(255,255,255,0.8)" : "var(--text-muted)" }}>
+                    <span style={{ fontSize: "11px", color: myVote === "b" ? "rgba(255,255,255,0.7)" : "#8e8e8e" }}>
                       {wyrVotes.b?.map(getUserName).join(", ") || "No votes"}
                     </span>
-                    <span style={{ fontSize: "13px", fontWeight: "800", color: myVote === "b" ? "white" : "var(--purple-dark)" }}>
-                      {pctB}%
-                    </span>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: myVote === "b" ? "white" : "#0f0f0f" }}>{pctB}%</span>
                   </div>
-                  <div style={{ height: "6px", borderRadius: "3px", background: myVote === "b" ? "rgba(255,255,255,0.3)" : "var(--purple-light)", overflow: "hidden" }}>
-                    <div style={{ width: `${pctB}%`, height: "100%", borderRadius: "3px", background: myVote === "b" ? "white" : "var(--purple-dark)", transition: "width 0.5s ease" }} />
+                  <div style={{ height: "4px", borderRadius: "2px", background: myVote === "b" ? "rgba(255,255,255,0.3)" : "#f0f0f0", overflow: "hidden" }}>
+                    <div style={{ width: `${pctB}%`, height: "100%", borderRadius: "2px", background: myVote === "b" ? "white" : "#0f0f0f", transition: "width 0.5s ease" }} />
                   </div>
                 </div>
               )}
             </button>
 
             {myVote && (
-              <p style={{ textAlign: "center", fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>
-                You chose <strong>{myVote === "a" ? wyrQuestion.a : wyrQuestion.b}</strong>
+              <p style={{ textAlign: "center", fontSize: "13px", color: "#8e8e8e", marginBottom: "16px", fontFamily: "Inter, sans-serif" }}>
+                You chose <strong style={{ color: "#0f0f0f" }}>{myVote === "a" ? wyrQuestion.a : wyrQuestion.b}</strong>
               </p>
             )}
 
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button className="btn-secondary" onClick={newWYR} style={{ flex: 1 }}>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={newWYR} style={{ flex: 1, padding: "12px", background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                 🔀 New Question
               </button>
-              <button className="btn-secondary" onClick={endGame} style={{ flex: 1 }}>
+              <button onClick={endGame} style={{ flex: 1, padding: "12px", background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                 🏠 Menu
               </button>
             </div>
           </>
         )}
 
+        {/* ── TRIVIA ── */}
         {screen === "trivia" && triviaQuestion && (
           <>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-              <h3 className="display-font" style={{ fontSize: "18px", color: "var(--text)", margin: 0 }}>
-                🧠 Trivia
-              </h3>
-              <button onClick={endGame} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "20px", cursor: "pointer" }}>✕</button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ fontSize: "17px", fontWeight: "700", margin: 0, fontFamily: "Inter, sans-serif" }}>🧠 Trivia</h3>
+              <button onClick={endGame} style={{ background: "none", border: "none", color: "#8e8e8e", fontSize: "20px", cursor: "pointer" }}>✕</button>
             </div>
 
-            <div className="card" style={{ marginBottom: "20px", textAlign: "center" }}>
-              <p style={{ fontSize: "16px", fontWeight: "700", color: "var(--text)", lineHeight: "1.5", margin: 0 }}>
+            <div style={{ padding: "16px", borderRadius: "14px", background: "#fafafa", border: "1px solid #e8e8e8", marginBottom: "16px", textAlign: "center" }}>
+              <p style={{ fontSize: "15px", fontWeight: "700", color: "#0f0f0f", lineHeight: "1.5", margin: 0, fontFamily: "Inter, sans-serif" }}>
                 {triviaQuestion.q}
               </p>
+              {triviaAnswers[me] === undefined && !triviaRevealed && (
+                <p style={{ fontSize: "12px", color: "#8e8e8e", margin: "8px 0 0", fontFamily: "Inter, sans-serif" }}>
+                  +3 🪙 for playing · +10 🪙 if correct
+                </p>
+              )}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
               {triviaQuestion.options.map((option, idx) => {
                 const myAnswer = triviaAnswers[me];
                 const isCorrect = idx === triviaQuestion.answer;
                 const iChose = myAnswer === idx;
-                const answeredCount = Object.keys(triviaAnswers).length;
 
-                let bg = "rgba(255,255,255,0.85)";
-                let border = "1.5px solid var(--border-sketch)";
-                let color = "var(--text)";
-                let shadow = "3px 3px 0px var(--border)";
-
+                let bg = "white", border = "1.5px solid #e0e0e0", color = "#0f0f0f", icon = ["A","B","C","D"][idx];
                 if (triviaRevealed) {
-                  if (isCorrect) { bg = "rgba(34,197,94,0.15)"; border = "2px solid #22C55E"; color = "#15803D"; shadow = "3px 3px 0px #22C55E"; }
-                  else if (iChose) { bg = "rgba(239,68,68,0.1)"; border = "2px solid #EF4444"; color = "#DC2626"; shadow = "3px 3px 0px #EF4444"; }
+                  if (isCorrect) { bg = "#f0fdf4"; border = "1.5px solid #22c55e"; color = "#15803d"; icon = "✓"; }
+                  else if (iChose) { bg = "#fff5f5"; border = "1.5px solid #ef4444"; color = "#dc2626"; icon = "✗"; }
                 } else if (iChose) {
-                  bg = "linear-gradient(135deg, var(--purple-mid), var(--purple-dark))";
-                  border = "none"; color = "white";
-                  shadow = "3px 3px 0px var(--purple-dark)";
+                  bg = "#0f0f0f"; border = "none"; color = "white";
                 }
 
                 return (
@@ -367,20 +323,19 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
                     disabled={myAnswer !== undefined || triviaRevealed}
                     style={{
                       display: "flex", alignItems: "center", gap: "12px",
-                      padding: "14px 16px", borderRadius: "14px",
+                      padding: "13px 16px", borderRadius: "12px",
                       background: bg, border, color,
-                      boxShadow: shadow, cursor: myAnswer !== undefined ? "default" : "pointer",
-                      fontFamily: "'Plus Jakarta Sans', sans-serif",
-                      transition: "all 0.2s ease", textAlign: "left"
+                      cursor: myAnswer !== undefined ? "default" : "pointer",
+                      fontFamily: "Inter, sans-serif", textAlign: "left", transition: "all 0.15s"
                     }}>
                     <span style={{
-                      width: "28px", height: "28px", borderRadius: "50%", flexShrink: 0,
-                      background: triviaRevealed && isCorrect ? "#22C55E" : triviaRevealed && iChose ? "#EF4444" : iChose ? "rgba(255,255,255,0.3)" : "var(--purple-light)",
-                      color: iChose || (triviaRevealed && isCorrect) ? "white" : "var(--purple-dark)",
+                      width: "26px", height: "26px", borderRadius: "50%", flexShrink: 0,
+                      background: triviaRevealed && isCorrect ? "#22c55e" : triviaRevealed && iChose && !isCorrect ? "#ef4444" : iChose ? "rgba(255,255,255,0.3)" : "#f0f0f0",
+                      color: iChose || (triviaRevealed && isCorrect) ? "white" : "#0f0f0f",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "13px", fontWeight: "800"
+                      fontSize: "12px", fontWeight: "800"
                     }}>
-                      {triviaRevealed && isCorrect ? "✓" : triviaRevealed && iChose && !isCorrect ? "✗" : ["A","B","C","D"][idx]}
+                      {icon}
                     </span>
                     <span style={{ fontSize: "14px", fontWeight: "600" }}>{option}</span>
                   </button>
@@ -389,7 +344,7 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
             </div>
 
             <div style={{ marginBottom: "16px" }}>
-              <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "8px" }}>
+              <p style={{ fontSize: "12px", color: "#8e8e8e", margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>
                 {Object.keys(triviaAnswers).length}/{members.length} answered
               </p>
               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
@@ -398,9 +353,10 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
                   return (
                     <span key={m.uid} style={{
                       fontSize: "12px", padding: "3px 10px", borderRadius: "20px",
-                      background: answered ? "var(--purple-light)" : "rgba(0,0,0,0.05)",
-                      color: answered ? "var(--purple-dark)" : "var(--text-muted)",
-                      fontWeight: "600", border: "1px solid var(--border)"
+                      background: answered ? "#f0f0f0" : "#fafafa",
+                      color: answered ? "#0f0f0f" : "#8e8e8e",
+                      fontWeight: answered ? "600" : "400",
+                      border: "1px solid #e8e8e8", fontFamily: "Inter, sans-serif"
                     }}>
                       {answered ? "✓" : "⏳"} {m.username}
                     </span>
@@ -410,31 +366,27 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
             </div>
 
             {triviaRevealed && (
-              <div style={{
-                padding: "14px", borderRadius: "14px", marginBottom: "16px",
-                background: "rgba(34,197,94,0.1)", border: "1.5px solid #22C55E",
-                textAlign: "center"
-              }}>
-                <p style={{ fontWeight: "800", color: "#15803D", margin: "0 0 4px", fontSize: "15px" }}>
-                  ✅ Correct answer: {triviaQuestion.options[triviaQuestion.answer]}
+              <div style={{ padding: "14px", borderRadius: "12px", marginBottom: "16px", background: "#f0fdf4", border: "1px solid #bbf7d0", textAlign: "center" }}>
+                <p style={{ fontWeight: "700", color: "#15803d", margin: "0 0 4px", fontSize: "15px", fontFamily: "Inter, sans-serif" }}>
+                  ✅ {triviaQuestion.options[triviaQuestion.answer]}
                 </p>
-                <p style={{ color: "#15803D", margin: 0, fontSize: "13px" }}>
+                <p style={{ color: "#15803d", margin: 0, fontSize: "13px", fontFamily: "Inter, sans-serif" }}>
                   Got it right: {members.filter(m => triviaAnswers[m.uid] === triviaQuestion.answer).map(m => m.username).join(", ") || "Nobody 😅"}
                 </p>
               </div>
             )}
 
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "8px" }}>
               {!triviaRevealed ? (
-                <button className="btn-primary" onClick={revealTrivia} style={{ flex: 1 }}>
+                <button onClick={revealTrivia} style={{ flex: 2, padding: "12px", background: "#0f0f0f", color: "white", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                   👁️ Reveal Answer
                 </button>
               ) : (
-                <button className="btn-primary" onClick={newTrivia} style={{ flex: 1 }}>
+                <button onClick={newTrivia} style={{ flex: 2, padding: "12px", background: "#0f0f0f", color: "white", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                   🔀 Next Question
                 </button>
               )}
-              <button className="btn-secondary" onClick={endGame} style={{ flex: 1 }}>
+              <button onClick={endGame} style={{ flex: 1, padding: "12px", background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                 🏠 Menu
               </button>
             </div>

@@ -50,7 +50,7 @@ export default function GroupChat() {
     fetch();
   }, [groupId]);
 
-  //Topic generator
+  //Topic generator timer
   useEffect(() => {
     if (!groupData) return;
     setTopic(generateTopic(groupData.sharedInterests || []));
@@ -401,7 +401,6 @@ export default function GroupChat() {
         </button>
       </div>
 
-      {/* ── MODALS ── */}
       {selectedMember && <MemberProfile uid={selectedMember} onClose={() => setSelectedMember(null)} />}
       {showVideoCall && <VideoCall groupId={groupId} groupName={groupData?.name} onClose={() => setShowVideoCall(false)} />}
       {showGame && <MiniGame groupId={groupId} groupName={groupData?.name} members={members} onClose={() => setShowGame(false)} />}

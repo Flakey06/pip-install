@@ -33,13 +33,10 @@ export async function joinRandomGroup(userProfile) {
   const userData = userDoc.data();
   const currentGroups = userData.groups || [];
   const maxGroups = userData.maxGroups || MAX_GROUPS_PER_PERSON;
-  
+
   if (currentGroups.length >= maxGroups) {
     return { success: false, reason: "max_groups" };
   }
-
-
-  
 
   const userInterests = (userProfile.interests || []).map(i => i.toLowerCase().trim());
   const groupsSnap = await getDocs(collection(db, "groups"));
@@ -57,23 +54,37 @@ export async function joinRandomGroup(userProfile) {
   });
 
   if (compatible.length > 0) {
+    // Join existing compatible group
     const group = compatible[Math.floor(Math.random() * compatible.length)];
     const groupInterests = (group.sharedInterests || []).map(i => i.toLowerCase().trim());
     const newShared = userInterests.filter(i => groupInterests.includes(i));
     const joinedAt = Date.now();
 
-    await updateDoc(doc(db, "groups", group.id), {
+    // If group has no admin yet, make the first member admin
+    const updateData = {
       members: arrayUnion(uid),
       memberCount: (group.members || []).length + 1,
       sharedInterests: newShared,
       name: generateGroupName(newShared[0]),
       [`memberJoinedAt.${uid}`]: joinedAt
-    });
+    };
 
+    // Set historyForAll to false if not already set
+    if (group.historyForAll === undefined) {
+      updateData.historyForAll = false;
+    }
+
+    // Set adminId if not already set (first person to join becomes admin)
+    if (!group.adminId) {
+      updateData.adminId = group.members?.[0] || uid;
+    }
+
+    await updateDoc(doc(db, "groups", group.id), updateData);
     await updateDoc(doc(db, "users", uid), { groups: arrayUnion(group.id) });
     return { success: true, groupId: group.id };
   }
 
+  // Create new group — current user is admin
   const joinedAt = Date.now();
   const newGroup = await addDoc(collection(db, "groups"), {
     name: generateGroupName(userInterests[0]),
@@ -83,6 +94,7 @@ export async function joinRandomGroup(userProfile) {
     createdAt: serverTimestamp(),
     type: "matched",
     historyForAll: false,
+    adminId: uid,
     memberJoinedAt: { [uid]: joinedAt }
   });
 
@@ -92,12 +104,21 @@ export async function joinRandomGroup(userProfile) {
 
 export async function leaveGroup(groupId) {
   const uid = auth.currentUser.uid;
-  await updateDoc(doc(db, "groups", groupId), {
-    members: arrayRemove(uid)
-  });
-  await updateDoc(doc(db, "users", uid), {
-    groups: arrayRemove(groupId)
-  });
+
+  // If admin is leaving, transfer admin to next member
+  const groupSnap = await getDoc(doc(db, "groups", groupId));
+  if (groupSnap.exists()) {
+    const data = groupSnap.data();
+    if (data.adminId === uid) {
+      const nextAdmin = (data.members || []).find(m => m !== uid);
+      if (nextAdmin) {
+        await updateDoc(doc(db, "groups", groupId), { adminId: nextAdmin });
+      }
+    }
+  }
+
+  await updateDoc(doc(db, "groups", groupId), { members: arrayRemove(uid) });
+  await updateDoc(doc(db, "users", uid), { groups: arrayRemove(groupId) });
   return { success: true };
 }
 

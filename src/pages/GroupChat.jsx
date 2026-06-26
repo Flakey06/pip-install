@@ -61,35 +61,29 @@ export default function GroupChat() {
   }, [groupData]);
 
   useEffect(() => {
+    const fetch = async () => {
+      const snap = await getDoc(doc(db, "groups", groupId));
+      if (snap.exists()) setGroupData(snap.data());
+    };
+    fetch();
+  }, [groupId]);
+
+  // Listen to messages
+  useEffect(() => {
     const messagesRef = ref(rtdb, `chats/${groupId}/messages`);
-    const unsubscribe = onValue(messagesRef, async (snap) => {
+    const unsubscribe = onValue(messagesRef, (snap) => {
       const data = snap.val();
       if (!data) { setMessages([]); return; }
       let parsed = Object.entries(data)
         .map(([id, msg]) => ({ id, ...msg }))
         .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-      const uid = auth.currentUser?.uid;
-      const groupSnap = await getDoc(doc(db, "groups", groupId));
-      if (groupSnap.exists()) {
-        const gData = groupSnap.data();
-        if (!gData.historyForAll && uid !== gData.adminId) {
-          const joinedAt = gData.memberJoinedAt?.[uid] || 0;
-          if (joinedAt) {
-            parsed = parsed.filter(m =>
-              (m.timestamp || 0) >= joinedAt ||
-              m.senderId === uid ||
-              m.type === "system"
-            );
-          }
-        }
-      }
-
       setMessages(parsed);
       markGroupAsRead(groupId);
     });
     return () => unsubscribe();
   }, [groupId]);
+
+
 
   //Auto scroll to bottom
   useEffect(() => {

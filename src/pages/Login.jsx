@@ -1,3 +1,5 @@
+ // file use: an entry point uses google + email/password auth, faq accordion
+
 import { auth, googleProvider, db } from "../firebase";
 import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -15,7 +17,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState("choose"); // "choose" | "login" | "signup"
+  const [mode, setMode] = useState("choose"); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -75,7 +77,7 @@ export default function Login() {
       <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", padding: "0 24px" }}>
         <div style={{ width: "100%", maxWidth: "420px", paddingTop: "52px", paddingBottom: "80px" }}>
 
-          {/* Logo */}
+          {/* logo */}
           <div className="fade-up" style={{ textAlign: "center", marginBottom: "32px" }}>
             <div style={{ display: "inline-block", animation: "float 4s ease-in-out infinite", filter: "drop-shadow(0 8px 24px var(--border))" }}>
               <img src="/pip-install_logo.png" alt="pip install" style={{ width: "180px" }} />
@@ -90,10 +92,9 @@ export default function Login() {
             </div>
           </div>
 
-          {/* ── CHOOSE MODE ── */}
+          {/* custom background design */}
           {mode === "choose" && (
             <div className="fade-up-1">
-              {/* Feature cards */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "28px" }}>
                 {[
                   { icon: "🤝", text: "Match with compatible people", rotate: "-0.4deg" },
@@ -120,7 +121,7 @@ export default function Login() {
                 ))}
               </div>
 
-              {/* Auth buttons */}
+
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "12px" }}>
                 <button className="btn-primary" onClick={handleGoogle} disabled={loading}
                   style={{ fontSize: "15px" }}>
@@ -150,7 +151,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* ── EMAIL LOGIN ── */}
+          {/* login (email) */}
           {mode === "login" && (
             <div className="fade-up">
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
@@ -227,7 +228,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* ── EMAIL SIGNUP ── */}
+          {/* signup (email) */}
           {mode === "signup" && (
             <div className="fade-up">
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
@@ -314,7 +315,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* FAQs — only show on choose screen */}
+          {/* FAQ */}
           {mode === "choose" && (
             <div className="fade-up-3" style={{ marginTop: "32px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>

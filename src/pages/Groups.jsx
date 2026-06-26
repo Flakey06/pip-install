@@ -1,3 +1,4 @@
+// code's use: messages tab, list of groups with unread badges
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
@@ -49,7 +50,6 @@ export default function Groups() {
         </span>
       </div>
 
-      {/* Explanation banner */}
       <div style={{
         padding: "10px 16px", background: "#fafafa",
         borderBottom: "1px solid var(--border)",

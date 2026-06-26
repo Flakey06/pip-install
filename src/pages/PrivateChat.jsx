@@ -1,3 +1,4 @@
+// 1-1 direct messages with friends
 import { useState, useEffect, useRef } from "react";
 import { auth, db, rtdb } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -14,7 +15,7 @@ function PrivateChat() {
   const navigate = useNavigate();
   const me = auth.currentUser?.uid;
 
-  // Create a consistent chat ID between two users
+
   const chatId = [me, friendId].sort().join("_");
 
   useEffect(() => {
@@ -75,7 +76,7 @@ function PrivateChat() {
       maxWidth: "480px", margin: "0 auto", overflow: "hidden"
     }}>
 
-      {/* Header */}
+
       <div style={{
         padding: "14px 16px", borderBottom: "1px solid #f0f0f0",
         display: "flex", alignItems: "center", gap: "12px",
@@ -99,7 +100,7 @@ function PrivateChat() {
         )}
       </div>
 
-      {/* Messages */}
+
       <div style={{
         flex: 1, overflowY: "auto", padding: "16px",
         display: "flex", flexDirection: "column", gap: "10px"
@@ -138,7 +139,7 @@ function PrivateChat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+
       <div style={{
         padding: "12px 16px", borderTop: "1px solid #f0f0f0",
         display: "flex", gap: "10px", alignItems: "flex-end",

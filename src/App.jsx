@@ -1,3 +1,4 @@
+// file use: react Router routes + ProtectedRoute wrapper
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useTheme } from "./hooks/useTheme";
 import { auth } from "./firebase";

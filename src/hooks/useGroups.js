@@ -1,3 +1,5 @@
+// file use: Matching algorithm, can join/leave groups, also can generate group names
+
 import { db, auth } from "../firebase";
 import {
   collection, getDocs, doc, updateDoc,
@@ -72,7 +74,6 @@ export async function joinRandomGroup(userProfile) {
     return { success: true, groupId: group.id };
   }
 
-  // Create new group
   const joinedAt = Date.now();
   const newGroup = await addDoc(collection(db, "groups"), {
     name: generateGroupName(userInterests[0]),

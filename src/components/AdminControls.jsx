@@ -1,3 +1,5 @@
+// File use: Transfer admin rights modal, admin only
+
 import { useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";

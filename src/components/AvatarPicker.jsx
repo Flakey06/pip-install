@@ -1,3 +1,5 @@
+// file use: Avatar modal, upload photo (Base64) or build cartoon SVG
+
 import { useState, useRef } from "react";
 import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";
@@ -39,7 +41,6 @@ function CartoonAvatar({ options, size = 80 }) {
   );
 }
 
-// Resize image → base64 JPEG
 function resizeToBase64(file, maxPx = 200) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

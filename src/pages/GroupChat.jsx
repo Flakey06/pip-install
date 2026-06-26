@@ -1,3 +1,4 @@
+// code's use: real-time group chat, got messages, topic, input bar
 import { useState, useEffect, useRef } from "react";
 import { auth, db, rtdb } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -25,7 +26,6 @@ export default function GroupChat() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  //Fetch current user profile
   useEffect(() => {
     const fetch = async () => {
       const user = auth.currentUser;
@@ -36,7 +36,6 @@ export default function GroupChat() {
     fetch();
   }, []);
 
-  //Get group data and members
   useEffect(() => {
     const fetch = async () => {
       const snap = await getDoc(doc(db, "groups", groupId));
@@ -61,7 +60,6 @@ export default function GroupChat() {
     return () => clearInterval(interval);
   }, [groupData]);
 
-  //listen to messages and filter history for new members
   useEffect(() => {
     const messagesRef = ref(rtdb, `chats/${groupId}/messages`);
     const unsubscribe = onValue(messagesRef, async (snap) => {
@@ -71,7 +69,6 @@ export default function GroupChat() {
         .map(([id, msg]) => ({ id, ...msg }))
         .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-      // Filter history for new members if admin disabled it
       const uid = auth.currentUser?.uid;
       const groupSnap = await getDoc(doc(db, "groups", groupId));
       if (groupSnap.exists()) {
@@ -145,14 +142,12 @@ export default function GroupChat() {
       background: "white", maxWidth: "480px", margin: "0 auto"
     }}>
 
-      {/* ── HEADER ── */}
       <div style={{
         padding: "10px 16px",
         borderBottom: "1px solid #f0f0f0",
         display: "flex", alignItems: "center", gap: "10px",
         background: "white", flexShrink: 0
       }}>
-        {/* Back */}
         <button onClick={() => navigate("/groups")} style={{
           background: "none", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", flexShrink: 0
@@ -162,7 +157,7 @@ export default function GroupChat() {
           </svg>
         </button>
 
-        {/* Group photo + name — tap to go to GroupInfo */}
+        {/* Group photo + name.. tap to go to GroupInfo */}
         <div onClick={() => navigate(`/group-info/${groupId}`)} style={{
           display: "flex", alignItems: "center", gap: "10px",
           flex: 1, minWidth: 0, cursor: "pointer"
@@ -192,7 +187,6 @@ export default function GroupChat() {
           </div>
         </div>
 
-        {/* Overlapping member avatars */}
         <div style={{ display: "flex", flexShrink: 0 }}>
           {members.slice(0, 3).map((m, i) => (
             <img key={m.uid} src={m.photoURL}
@@ -219,7 +213,7 @@ export default function GroupChat() {
         </div>
       </div>
 
-      {/* ── COMMON INTERESTS ── */}
+      {/* common hobbies */}
       {groupData?.sharedInterests?.length > 0 && (
         <div style={{
           padding: "6px 16px", background: "#fafafa",
@@ -240,7 +234,7 @@ export default function GroupChat() {
         </div>
       )}
 
-      {/* ── TOPIC ── */}
+      {/* topics*/}
       {topic && (
         <div style={{
           padding: "8px 16px", background: "white",
@@ -267,7 +261,6 @@ export default function GroupChat() {
         </div>
       )}
 
-      {/* ── MESSAGES ── */}
       <div style={{
         flex: 1, overflowY: "auto",
         padding: "12px 16px",
@@ -333,7 +326,6 @@ export default function GroupChat() {
                   </p>
                 )}
 
-                {/* Bubble */}
                 <div style={{
                   padding: "9px 13px",
                   borderRadius: mine
@@ -361,7 +353,7 @@ export default function GroupChat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── MODERN INPUT BAR ── */}
+      {/* input bar */}
       <div style={{
         padding: "10px 16px 28px",
         borderTop: "1px solid #f0f0f0",

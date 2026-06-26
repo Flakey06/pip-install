@@ -1,3 +1,5 @@
+// code contains: pip coins, includes balance, unlock group slots, earn history
+
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -66,7 +68,7 @@ export default function Credits() {
         <div style={{ width: "20px" }} />
       </div>
 
-      {/* Balance card */}
+      
       <div style={{ margin: "16px", padding: "28px 20px", background: "#0f0f0f", borderRadius: "20px", textAlign: "center" }}>
         <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", margin: "0 0 8px", fontFamily: "Inter, sans-serif", fontWeight: "600", letterSpacing: "0.1em", textTransform: "uppercase" }}>
           Your Balance
@@ -94,7 +96,7 @@ export default function Credits() {
         </div>
       )}
 
-      {/* Unlock slots */}
+      {/* to unlock more slots, logic tbc*/}
       <p className="section-label">Unlock More Slots</p>
       <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: "10px", marginBottom: "8px" }}>
         {SLOTS.map(({ slot, cost, label, desc }) => {
@@ -138,7 +140,6 @@ export default function Credits() {
         })}
       </div>
 
-      {/* How to earn */}
       <p className="section-label">How to Earn</p>
       <div style={{ margin: "0 16px", borderRadius: "14px", border: "1px solid var(--border)", overflow: "hidden", marginBottom: "16px" }}>
         {HOW_TO_EARN.map((item, i) => (
@@ -153,7 +154,7 @@ export default function Credits() {
         ))}
       </div>
 
-      {/* Recent history */}
+      {/*double check this, no confidence..*/}
       {history.length > 0 && (
         <>
           <p className="section-label">Recent Activity</p>

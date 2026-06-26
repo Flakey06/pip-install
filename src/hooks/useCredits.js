@@ -1,3 +1,5 @@
+// use: coin system, earn, spend, fetch balance, unlock group slots
+
 import { db, auth } from "../firebase";
 import { doc, getDoc, updateDoc, setDoc, increment, arrayUnion, serverTimestamp } from "firebase/firestore";
 
@@ -14,7 +16,7 @@ export const UNLOCK_COSTS = {
   slot_8: 200,
 };
 
-// Ensure credits field exists on user doc
+// Ryan pls chk this part
 async function ensureCreditsField(uid) {
   const snap = await getDoc(doc(db, "users", uid));
   if (!snap.exists()) return;

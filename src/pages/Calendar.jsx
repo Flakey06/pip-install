@@ -1,3 +1,4 @@
+// code's use: personal calendar, aggregates events from ALL groups
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -45,21 +46,18 @@ export default function Calendar() {
         <div style={{ width: "20px" }} />
       </div>
 
-      {/* Month navigation */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px" }}>
         <button onClick={() => setCurrentMonth(new Date(year, month - 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px" }}>‹</button>
         <p style={{ fontWeight: "700", fontSize: "16px", fontFamily: "Inter, sans-serif", margin: 0 }}>{MONTHS[month]} {year}</p>
         <button onClick={() => setCurrentMonth(new Date(year, month + 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px" }}>›</button>
       </div>
 
-      {/* Day labels */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px", marginBottom: "4px" }}>
         {DAYS.map(d => (
           <p key={d} style={{ textAlign: "center", fontSize: "11px", fontWeight: "600", color: "#8e8e8e", margin: 0, padding: "4px 0", fontFamily: "Inter, sans-serif" }}>{d}</p>
         ))}
       </div>
 
-      {/* Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px", gap: "2px" }}>
         {Array(firstDay).fill(null).map((_, i) => <div key={i} />)}
         {Array(daysInMonth).fill(null).map((_, i) => {
@@ -90,7 +88,6 @@ export default function Calendar() {
 
       <div className="divider" style={{ margin: "12px 0" }} />
 
-      {/* Events */}
       <div style={{ padding: "0 16px" }}>
         {selectedDate ? (
           <>

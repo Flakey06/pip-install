@@ -1,3 +1,4 @@
+// fileuse: apply and persist colour theme via CSS variables + localStorage
 import { useState, useEffect } from "react";
 
 export const THEMES = [
@@ -26,7 +27,6 @@ export function applyTheme(themeId) {
   root.style.setProperty("--text",         `hsl(${h}, 40%, 12%)`);
   root.style.setProperty("--text-muted",   `hsl(${h}, 20%, 50%)`);
 
-  // Grid bg — uses same hue
   root.style.setProperty("--grid-color",   `hsla(${h}, ${s}%, 50%, 0.07)`);
   root.style.setProperty("--mesh1",        `hsla(${h}, ${s}%, 62%, 0.22)`);
   root.style.setProperty("--mesh2",        `hsla(${h + 30}, ${s}%, 65%, 0.14)`);
@@ -35,7 +35,7 @@ export function applyTheme(themeId) {
 export function useTheme() {
   const [themeId, setThemeId] = useState(() => {
     const saved = localStorage.getItem("pip-theme") || "violet";
-    applyTheme(saved); // apply immediately on first render
+    applyTheme(saved); 
     return saved;
   });
 

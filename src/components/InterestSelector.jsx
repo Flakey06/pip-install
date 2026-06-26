@@ -1,3 +1,5 @@
+// file purpose: Searchable interest dropdown, add custom interests to Firestore
+
 import { useState, useRef, useEffect } from "react";
 import { normalise } from "../hooks/useInterests";
 
@@ -63,7 +65,6 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
         <label style={{ color: "#1a1a1a", fontSize: "14px", fontWeight: "bold" }}>
           Interests
         </label>
-        {/* + button */}
         <button
           onClick={() => setShowAddModal(true)}
           style={{
@@ -84,7 +85,6 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
         </button>
       </div>
 
-      {/* Selected tags */}
       <div style={{
         display: "flex", flexWrap: "wrap", gap: "8px",
         marginBottom: "12px", minHeight: "10px"
@@ -111,13 +111,11 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
               onClick={() => removeInterest(interest)}
               style={{ cursor: "pointer", fontSize: "16px", lineHeight: 1 }}
             >
-              ×
             </span>
           </span>
         ))}
       </div>
 
-      {/* Search input + dropdown */}
       <div ref={wrapperRef} style={{ position: "relative" }}>
         <input
           value={input}
@@ -182,7 +180,6 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
         "AI", "ai", "A I" are all treated the same ~
       </p>
 
-      {/* Add custom interest modal */}
       {showAddModal && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,

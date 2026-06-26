@@ -1,3 +1,5 @@
+// code use: includes for you tab, all groups, random match, create
+
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { collection, getDocs, addDoc, doc, updateDoc, arrayUnion, getDoc, serverTimestamp } from "firebase/firestore";
@@ -17,7 +19,7 @@ export default function Explore() {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [message, setMessage] = useState("");
-  const [tab, setTab] = useState("foryou"); // "foryou" | "all"
+  const [tab, setTab] = useState("foryou");  
   const navigate = useNavigate();
 
   useEffect(() => { fetchAll(); }, []);
@@ -88,7 +90,6 @@ export default function Explore() {
     setTimeout(() => navigate(`/chat/${g.id}`), 400);
   };
 
-  // For You = groups with matching interests
   const userInterests = (userProfile?.interests || []).map(i => i.toLowerCase().trim());
   const forYouGroups = groups.filter(g => {
     if (userGroups.includes(g.id)) return false;
@@ -103,7 +104,6 @@ export default function Explore() {
 
   return (
     <div className="page">
-      {/* Header */}
       <div className="header" style={{ flexDirection: "column", alignItems: "stretch", gap: "10px", padding: "14px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span className="header-title">Explore</span>
@@ -117,7 +117,6 @@ export default function Explore() {
         </div>
       </div>
 
-      {/* Create form */}
       {showCreate && (
         <div style={{ padding: "16px", borderBottom: "1px solid var(--border)", background: "#fafafa", animation: "fadeUp 0.2s ease" }}>
           <p style={{ fontWeight: "700", fontSize: "15px", marginBottom: "12px", fontFamily: "Inter, sans-serif" }}>New Interest Group</p>
@@ -141,7 +140,6 @@ export default function Explore() {
         </p>
       )}
 
-      {/* Random match banner */}
       {!search && (
         <div style={{
           margin: "12px 16px",
@@ -177,7 +175,6 @@ export default function Explore() {
       {loading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "60px" }}><div className="loader" /></div>
       ) : search ? (
-        /* Search results */
         <>
           <p className="section-label">Search Results ({filtered.length})</p>
           {filtered.length === 0 ? (
@@ -189,9 +186,7 @@ export default function Explore() {
           )}
         </>
       ) : (
-        /* For You + All tabs */
         <>
-          {/* Tabs */}
           <div style={{ display: "flex", borderBottom: "1px solid var(--border)", padding: "0 16px" }}>
             {[["foryou", "For You"], ["all", "All Groups"]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{

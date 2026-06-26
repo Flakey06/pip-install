@@ -1,3 +1,4 @@
+// code use: group settings, which includes rename, photo, members, history toggle, actions
 import { useState, useEffect } from "react";
 import { auth, db, rtdb } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
@@ -100,7 +101,6 @@ export default function GroupInfo() {
   return (
     <div style={{ minHeight: "100vh", background: "white", paddingBottom: "40px" }}>
 
-      {/* Header */}
       <div className="header">
         <button onClick={() => navigate(`/chat/${groupId}`)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -111,7 +111,6 @@ export default function GroupInfo() {
         <div style={{ width: "20px" }} />
       </div>
 
-      {/* Group avatar + name */}
       <div style={{ padding: "24px 16px 20px", textAlign: "center", borderBottom: "1px solid var(--border)" }}>
         {/* Avatar */}
         <div style={{ position: "relative", display: "inline-block", marginBottom: "14px" }}>
@@ -136,7 +135,7 @@ export default function GroupInfo() {
           }}>✎</button>
         </div>
 
-        {/* Name editing */}
+        {/* edit name */}
         {editingName ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
             <input
@@ -173,7 +172,7 @@ export default function GroupInfo() {
           <div>
             <p style={{ fontWeight: "700", fontSize: "20px", margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>
               {groupData.name}
-              {/* Anyone can rename */}
+              {/* change name */}
               <button onClick={() => setEditingName(true)} style={{
                 background: "none", border: "none", cursor: "pointer",
                 color: "#8e8e8e", fontSize: "14px", marginLeft: "6px", verticalAlign: "middle"
@@ -198,7 +197,7 @@ export default function GroupInfo() {
         </div>
       )}
 
-      {/* Actions — Edit, Call, Games, Calendar */}
+      {/* Edit, Call, Games, Calendar */}
       <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
         <p className="section-label" style={{ padding: 0, marginBottom: "10px" }}>Actions</p>
         <div style={{ display: "flex", gap: "10px" }}>
@@ -222,7 +221,6 @@ export default function GroupInfo() {
         </div>
       </div>
 
-      {/* Chat history toggle — admin only */}
       {isAdmin && (
         <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -254,7 +252,6 @@ export default function GroupInfo() {
         </div>
       )}
 
-      {/* Members */}
       <div>
         <p className="section-label">{members.length} Members</p>
         {members.map((m, i) => (

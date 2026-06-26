@@ -1,3 +1,4 @@
+// file use: Fetch + update master interest list from Firestore
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc, arrayUnion, setDoc } from "firebase/firestore";

@@ -1,3 +1,4 @@
+// code's use: uer-group event calendar, add/view/delete hangouts
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
@@ -34,7 +35,7 @@ export default function GroupCalendar() {
       groupId, title: title.trim(), date: selectedDate,
       time, location, note, createdBy: me, createdAt: serverTimestamp()
     });
-    // Also save to personal calendar
+
     await addDoc(collection(db, "personalEvents"), {
       userId: me, title: `[Group] ${title.trim()}`, date: selectedDate,
       time, location, note, groupId, createdAt: serverTimestamp()
@@ -51,7 +52,6 @@ export default function GroupCalendar() {
     await fetchEvents();
   };
 
-  // Calendar grid
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
@@ -72,7 +72,6 @@ export default function GroupCalendar() {
 
   return (
     <div style={{ minHeight: "100vh", background: "white", paddingBottom: "40px" }}>
-      {/* Header */}
       <div className="header">
         <button onClick={() => navigate(-1)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -83,7 +82,6 @@ export default function GroupCalendar() {
         <button className="text-btn" onClick={() => setShowAdd(true)}>+ Add</button>
       </div>
 
-      {/* Month navigation */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px" }}>
         <button onClick={() => setCurrentMonth(new Date(year, month - 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#0f0f0f" }}>‹</button>
         <p style={{ fontWeight: "700", fontSize: "16px", fontFamily: "Inter, sans-serif", margin: 0 }}>
@@ -92,7 +90,7 @@ export default function GroupCalendar() {
         <button onClick={() => setCurrentMonth(new Date(year, month + 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#0f0f0f" }}>›</button>
       </div>
 
-      {/* Day labels */}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px", marginBottom: "4px" }}>
         {DAYS.map(d => (
           <p key={d} style={{ textAlign: "center", fontSize: "11px", fontWeight: "600", color: "#8e8e8e", margin: 0, padding: "4px 0", fontFamily: "Inter, sans-serif" }}>
@@ -101,7 +99,6 @@ export default function GroupCalendar() {
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px", gap: "2px" }}>
         {Array(firstDay).fill(null).map((_, i) => <div key={`empty-${i}`} />)}
         {Array(daysInMonth).fill(null).map((_, i) => {
@@ -138,7 +135,7 @@ export default function GroupCalendar() {
 
       <div className="divider" style={{ margin: "12px 0" }} />
 
-      {/* Selected date events */}
+      {/* to choose the dates */}
       {selectedDate && (
         <div style={{ padding: "0 16px 16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -157,7 +154,7 @@ export default function GroupCalendar() {
         </div>
       )}
 
-      {/* This month's events */}
+      {/* overview of months events */}
       {!selectedDate && monthEvents.length > 0 && (
         <div style={{ padding: "0 16px" }}>
           <p className="section-label" style={{ padding: "0 0 8px" }}>This Month</p>
@@ -167,7 +164,7 @@ export default function GroupCalendar() {
         </div>
       )}
 
-      {/* Add event modal */}
+
       {showAdd && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,

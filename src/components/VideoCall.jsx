@@ -1,3 +1,4 @@
+// file use: Jitsi Meet integration — generates room URL, sends system message
 import { useState } from "react";
 
 export default function VideoCall({ groupId, groupName, onClose }) {
@@ -31,10 +32,9 @@ export default function VideoCall({ groupId, groupName, onClose }) {
         border: "1.5px solid var(--border-sketch)",
         animation: "fadeUp 0.3s ease"
       }}>
-        {/* Handle */}
+
         <div style={{ width: "40px", height: "4px", background: "var(--border-sketch)", borderRadius: "2px", margin: "0 auto 24px" }} />
 
-        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <div style={{ fontSize: "48px", marginBottom: "8px" }}>📹</div>
           <h3 className="display-font" style={{ fontSize: "22px", color: "var(--text)", marginBottom: "4px" }}>
@@ -45,7 +45,6 @@ export default function VideoCall({ groupId, groupName, onClose }) {
           </p>
         </div>
 
-        {/* Room info */}
         <div className="card" style={{ marginBottom: "20px", padding: "16px" }}>
           <p className="section-label">Room link</p>
           <div style={{
@@ -72,7 +71,6 @@ export default function VideoCall({ groupId, groupName, onClose }) {
           </div>
         </div>
 
-        {/* Info */}
         <div style={{
           padding: "12px 14px", borderRadius: "12px",
           background: "rgba(255,193,7,0.1)", border: "1px solid rgba(255,193,7,0.3)",
@@ -84,7 +82,6 @@ export default function VideoCall({ groupId, groupName, onClose }) {
           </p>
         </div>
 
-        {/* Steps */}
         <div style={{ marginBottom: "24px" }}>
           {[
             { step: "1", text: "Click Join Call below" },
@@ -111,7 +108,6 @@ export default function VideoCall({ groupId, groupName, onClose }) {
           ))}
         </div>
 
-        {/* Buttons */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <button className="btn-primary" onClick={joinCall} style={{ fontSize: "16px", padding: "16px" }}>
             {joined ? "🔁 Rejoin Call" : "📹 Join Call"}

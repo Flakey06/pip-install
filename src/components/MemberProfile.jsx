@@ -1,3 +1,4 @@
+// file use: Member profile modal, view profile, add friend, report user
 import { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
@@ -16,7 +17,6 @@ function MemberProfile({ uid, onClose }) {
       const snap = await getDoc(doc(db, "users", uid));
       if (snap.exists()) setProfile(snap.data());
 
-      // Check friend status
       const friendSnap = await getDoc(doc(db, "friends", `${me}_${uid}`));
       if (friendSnap.exists()) { setFriendStatus("friends"); setLoading(false); return; }
 
@@ -41,10 +41,8 @@ function MemberProfile({ uid, onClose }) {
   };
 
   const acceptRequest = async () => {
-    // Create friend docs for both users
     await setDoc(doc(db, "friends", `${me}_${uid}`), { uid, addedAt: serverTimestamp() });
     await setDoc(doc(db, "friends", `${uid}_${me}`), { uid: me, addedAt: serverTimestamp() });
-    // Delete request
     await updateDoc(doc(db, "friendRequests", `${uid}_${me}`), { status: "accepted" });
     setFriendStatus("friends");
   };
@@ -67,10 +65,8 @@ function MemberProfile({ uid, onClose }) {
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Handle bar */}
         <div style={{ width: "40px", height: "4px", background: "#e0e0e0", borderRadius: "2px", margin: "0 auto 20px" }} />
 
-        {/* Profile header */}
         <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "20px" }}>
           <img
             src={profile.photoURL}
@@ -80,7 +76,6 @@ function MemberProfile({ uid, onClose }) {
           <div>
             <h3 style={{ margin: 0, color: "#1a1a1a", fontSize: "18px" }}>{profile.username}</h3>
             <p style={{ margin: "2px 0 0", color: "#888", fontSize: "13px" }}>{profile.major} · Year {profile.year}</p>
-            {/* Telegram only shown to friends */}
             {isFriend && profile.telegram && (
               <p style={{ margin: "4px 0 0", color: "#4F46E5", fontSize: "13px", fontWeight: "bold" }}>
                 📱 {profile.telegram}
@@ -89,14 +84,12 @@ function MemberProfile({ uid, onClose }) {
           </div>
         </div>
 
-        {/* Bio */}
         {profile.bio && (
           <p style={{ color: "#555", fontSize: "14px", marginBottom: "16px", lineHeight: "1.5" }}>
             {profile.bio}
           </p>
         )}
 
-        {/* Interests */}
         <div style={{ marginBottom: "20px" }}>
           <p style={{ fontWeight: "bold", color: "#1a1a1a", fontSize: "13px", marginBottom: "8px" }}>Interests</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -111,14 +104,12 @@ function MemberProfile({ uid, onClose }) {
           </div>
         </div>
 
-        {/* Telegram hidden message */}
         {!isFriend && profile.telegram && (
           <p style={{ fontSize: "12px", color: "#aaa", marginBottom: "16px" }}>
             🔒 Add as friend to see Telegram handle
           </p>
         )}
 
-        {/* Friend button */}
         {uid !== me && (
           <button
             onClick={

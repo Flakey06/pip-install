@@ -1,3 +1,4 @@
+ // code use: profile dashboard, got stats, coins, interests, nav buttons
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -42,7 +43,7 @@ export default function Home() {
 
   return (
     <div className="page">
-      {/* Header */}
+      {/* header */}
       <div className="header">
         <span className="header-title">{profile.username}</span>
         <button onClick={logout} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)", display: "flex", alignItems: "center" }}>
@@ -54,10 +55,10 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Profile section */}
+      {/* profile section */}
       <div style={{ padding: "20px 16px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "16px" }}>
-          {/* Avatar */}
+          {/* avatar */}
           <img
             src={profile.photoURL || auth.currentUser?.photoURL}
             alt="avatar"
@@ -65,7 +66,6 @@ export default function Home() {
             style={{ width: "80px", height: "80px", flexShrink: 0 }}
           />
 
-          {/* Stats */}
           <div style={{ display: "flex", gap: "20px", flex: 1, justifyContent: "space-around" }}>
             <div style={{ textAlign: "center" }}>
               <p style={{ fontSize: "18px", fontWeight: "700", color: "var(--text)", margin: 0 }}>
@@ -79,7 +79,7 @@ export default function Home() {
               </p>
               <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0 }}>Interests</p>
             </div>
-            {/* Coins — tap to go to credits page */}
+            {/* coins tokens */}
             <div
               style={{ textAlign: "center", cursor: "pointer" }}
               onClick={() => navigate("/credits")}
@@ -92,7 +92,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Name + bio */}
+
         <div style={{ marginBottom: "14px" }}>
           <p style={{ fontWeight: "700", fontSize: "15px", margin: "0 0 2px" }}>{profile.username}</p>
           {profile.major && <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: "0 0 2px" }}>{profile.major} · Year {profile.year}</p>}
@@ -108,7 +108,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Buttons */}
+
         <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
           <button className="btn-secondary" onClick={() => navigate("/edit-profile")} style={{ fontSize: "14px", padding: "8px" }}>
             Edit profile
@@ -127,7 +127,7 @@ export default function Home() {
 
       <div className="divider" style={{ margin: 0 }} />
 
-      {/* Interests */}
+
       {profile.interests?.length > 0 && (
         <>
           <p className="section-label">Interests</p>

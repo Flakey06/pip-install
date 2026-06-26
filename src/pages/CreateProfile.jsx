@@ -1,3 +1,4 @@
+// fileuse: for first time setup, includes avatar, username, major, interests
 import { useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
@@ -28,7 +29,6 @@ export default function CreateProfile() {
     setSaving(true);
     const user = auth.currentUser;
 
-    //Custom profile pic
     const finalAvatar = avatarUrl ||
       user.photoURL ||
       `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(username)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
@@ -65,7 +65,6 @@ export default function CreateProfile() {
             </p>
           </div>
 
-          {/* Avatar */}
           <div className="fade-up-1" style={{ textAlign: "center", marginBottom: "28px" }}>
             <div style={{ position: "relative", display: "inline-block" }}>
               <div style={{
@@ -104,7 +103,6 @@ export default function CreateProfile() {
             />
           )}
 
-          {/* Form fields */}
           <div className="fade-up-2" style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "20px" }}>
             {[
               { label: "Username *", value: username, set: setUsername, placeholder: "e.g. jamie123", type: "input" },

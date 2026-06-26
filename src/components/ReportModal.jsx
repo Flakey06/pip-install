@@ -1,3 +1,4 @@
+// file use: Report user form, reason + details, saves to Firestore
 import { useState } from "react";
 import { auth, db } from "../firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";

@@ -1,3 +1,5 @@
+// code purpose: edit existing profile, fields shld be similar to that of create
+
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
@@ -57,7 +59,6 @@ export default function EditProfile() {
 
   return (
     <div className="page" style={{ paddingBottom: 0 }}>
-      {/* Header */}
       <div className="header">
         <button onClick={() => navigate("/home")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,7 +71,6 @@ export default function EditProfile() {
         </button>
       </div>
 
-      {/* Avatar */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px 0 20px" }}>
         <img
           src={avatarUrl || auth.currentUser?.photoURL}
@@ -86,7 +86,6 @@ export default function EditProfile() {
 
       <div className="divider" />
 
-      {/* Form fields */}
       <div style={{ padding: "0 16px" }}>
         {FIELDS.map((field, i) => (
           <div key={field.label} style={{ padding: "14px 0", borderBottom: i < FIELDS.length - 1 ? "1px solid var(--border)" : "none" }}>
@@ -100,7 +99,6 @@ export default function EditProfile() {
           </div>
         ))}
 
-        {/* Year */}
         <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border)" }}>
           <label className="input-label">Year of Study</label>
           <select

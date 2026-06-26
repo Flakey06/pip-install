@@ -1,3 +1,5 @@
+// code's purpose: community tab friend requests + friends list
+
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
@@ -37,12 +39,10 @@ export default function Friends() {
 
   return (
     <div className="page">
-      {/* Header */}
       <div className="header">
         <span className="header-title">Community</span>
       </div>
 
-      {/* Requests */}
       {requests.length > 0 && (
         <>
           <p className="section-label">Friend Requests ({requests.length})</p>
@@ -63,7 +63,6 @@ export default function Friends() {
         </>
       )}
 
-      {/* Friends */}
       <p className="section-label">Discover other members</p>
 
       {friends.length === 0 ? (

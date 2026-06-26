@@ -1,3 +1,4 @@
+//file use: entry point, applies theme, waits for firebase auth state
 import { StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

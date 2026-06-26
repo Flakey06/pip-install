@@ -1,3 +1,4 @@
+// file purpose: count unread messages per group using lastSeen timestamps
 import { useState, useEffect } from "react";
 import { auth, db, rtdb } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -23,14 +24,12 @@ export function useUnreadMessages(groupIds) {
           return;
         }
 
-        // Get last seen timestamp for this group
         const lastSeenRef = doc(db, "lastSeen", `${uid}_${groupId}`);
         const lastSeenSnap = await getDoc(lastSeenRef);
         const lastSeenTime = lastSeenSnap.exists()
           ? lastSeenSnap.data().timestamp
           : 0;
 
-        // Count messages after lastSeen that aren't from me
         const messages = Object.values(data);
         const unread = messages.filter(msg =>
           msg.senderId !== uid &&
@@ -54,7 +53,6 @@ export function useUnreadMessages(groupIds) {
   return { unreadCounts, totalUnread };
 }
 
-// Call this when user opens a group chat
 export async function markGroupAsRead(groupId) {
   const uid = auth.currentUser?.uid;
   if (!uid) return;

@@ -1,3 +1,4 @@
+// file: 8-colour theme selector, changes all CSS variables globally
 import { useTheme, THEMES } from "../hooks/useTheme";
 
 export default function ThemePicker({ onClose }) {
@@ -19,7 +20,6 @@ export default function ThemePicker({ onClose }) {
         boxShadow: "0 -8px 40px rgba(0,0,0,0.15)",
         animation: "fadeUp 0.3s ease"
       }}>
-        {/* Handle */}
         <div style={{ width: "40px", height: "4px", background: "var(--border-sketch)", borderRadius: "2px", margin: "0 auto 20px" }} />
 
         <h3 className="display-font" style={{ fontSize: "22px", color: "var(--text)", marginBottom: "4px" }}>
@@ -51,7 +51,6 @@ export default function ThemePicker({ onClose }) {
                 transform: isSelected ? "translateY(-2px)" : "none",
                 fontFamily: "'Plus Jakarta Sans', sans-serif"
               }}>
-                {/* Swatch */}
                 <div style={{
                   width: "30px", height: "30px", borderRadius: "50%", flexShrink: 0,
                   background: `linear-gradient(135deg, hsl(${h},${s}%,65%), hsl(${h},${s-10}%,${dark}%))`,

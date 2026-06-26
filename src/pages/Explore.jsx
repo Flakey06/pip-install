@@ -82,11 +82,15 @@ export default function Explore() {
     setCreating(true);
     const uid = auth.currentUser.uid;
     const topics = newTopics.split(",").map(t => t.toLowerCase().trim()).filter(Boolean);
+    const joinedAt = Date.now();
     const g = await addDoc(collection(db, "groups"), {
       name: newName.trim(), members: [uid], memberCount: 1,
       sharedInterests: topics, adminId: uid,
-      type: "interest", createdAt: serverTimestamp()
+      type: "interest", createdAt: serverTimestamp(),
+      historyForAll: false,
+      memberJoinedAt: { [uid]: joinedAt }
     });
+
     await updateDoc(doc(db, "users", uid), { groups: arrayUnion(g.id) });
     setCreating(false); setShowCreate(false);
     setNewName(""); setNewTopics("");

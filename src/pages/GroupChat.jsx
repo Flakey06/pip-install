@@ -68,7 +68,6 @@ export default function GroupChat() {
     fetch();
   }, [groupId]);
 
-  // Listen to messages
   useEffect(() => {
     const messagesRef = ref(rtdb, `chats/${groupId}/messages`);
     const unsubscribe = onValue(messagesRef, (snap) => {
@@ -267,7 +266,21 @@ export default function GroupChat() {
           </div>
         )}
 
-        {messages.map((msg, idx) => {
+      {(() => {
+        const uid = auth.currentUser?.uid;
+        const isAdmin = groupData?.adminId === uid;
+        const historyForAll = groupData?.historyForAll || false;
+        const joinedAt = groupData?.memberJoinedAt?.[uid] || 0;
+
+        const visibleMessages = (!historyForAll && !isAdmin && joinedAt)
+          ? messages.filter(m =>
+              (m.timestamp || 0) >= joinedAt ||
+              m.senderId === uid ||
+              m.type === "system"
+            )
+          : messages;
+
+        return visibleMessages.map((msg, idx) => {
           const prev = messages[idx - 1];
           const next = messages[idx + 1];
           const isFirst = !prev || prev.senderId !== msg.senderId || prev.type === "system";
@@ -343,7 +356,8 @@ export default function GroupChat() {
               </div>
             </div>
           );
-        })}
+        });
+      })()}
         <div ref={messagesEndRef} />
       </div>
 

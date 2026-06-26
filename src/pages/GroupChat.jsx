@@ -1,7 +1,7 @@
 // code's use: real-time group chat, got messages, topic, input bar
 import { useState, useEffect, useRef } from "react";
 import { auth, db, rtdb } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { ref, push, onValue, serverTimestamp } from "firebase/database";
 import { useNavigate, useParams } from "react-router-dom";
 import MemberProfile from "../components/MemberProfile";
@@ -61,11 +61,10 @@ export default function GroupChat() {
   }, [groupData]);
 
   useEffect(() => {
-    const fetch = async () => {
-      const snap = await getDoc(doc(db, "groups", groupId));
+    const unsubscribe = onSnapshot(doc(db, "groups", groupId), (snap) => {
       if (snap.exists()) setGroupData(snap.data());
-    };
-    fetch();
+    });
+    return () => unsubscribe();
   }, [groupId]);
 
   useEffect(() => {

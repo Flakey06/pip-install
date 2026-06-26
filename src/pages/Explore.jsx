@@ -43,11 +43,15 @@ export default function Explore() {
     if (userGroups.includes(group.id)) { navigate(`/chat/${group.id}`); return; } 
     if (userGroups.length >= (userProfile?.maxGroups || 5)) { setMessage(`❌ You're in ${userProfile?.maxGroups || 5} groups — leave one first!`); return; }
     if ((group.members?.length || 0) >= 6) { setMessage("This group is full!"); return; }
+    const joinedAt = Date.now();
     await updateDoc(doc(db, "groups", group.id), {
       members: arrayUnion(uid),
-      memberCount: (group.members?.length || 0) + 1
+      memberCount: (group.members?.length || 0) + 1,
+      [`memberJoinedAt.${uid}`]: joinedAt,
+      historyForAll: group.historyForAll ?? false,
+      adminId: group.adminId || group.members?.[0] || uid
     });
-    await updateDoc(doc(db, "users", uid), { groups: arrayUnion(group.id) });
+    await updateDoc(doc(db, "users", uid), { groups: arrayUnion(group.id) });  
     setUserGroups(p => [...p, group.id]);
     setMessage("Joined!");
     setTimeout(() => navigate(`/chat/${group.id}`), 500);

@@ -1,0 +1,6 @@
+{
+    "best_accuracy": 0.9011628031730652,
+    "best_model_dir": "orbital_classifier_models/orbital_classifier_model_acc-0.9012_20260627_031522",
+    "category_labels_path": "orbital_classifier_models/orbital_classifier_model_acc-0.9012_20260627_031522/category_labels.json",
+    "saved_at": "20260627_031522"
+}

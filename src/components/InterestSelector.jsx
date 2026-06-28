@@ -62,7 +62,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
   return (
     <div style={{ marginBottom: "28px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-        <label style={{ color: "#1a1a1a", fontSize: "14px", fontWeight: "bold" }}>
+        <label style={{ color: "var(--text)", fontSize: "14px", fontWeight: "bold" }}>
           Interests
         </label>
         <button
@@ -71,7 +71,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
             width: "28px", height: "28px",
             borderRadius: "50%",
             background: "#4F46E5",
-            color: "white",
+            color: "var(--bg)",
             border: "none",
             fontSize: "20px",
             cursor: "pointer",
@@ -99,7 +99,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
             padding: "6px 12px",
             borderRadius: "20px",
             background: "#4F46E5",
-            color: "white",
+            color: "var(--bg)",
             fontSize: "13px",
             fontWeight: "bold",
             display: "flex",
@@ -134,7 +134,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
             borderRadius: "10px",
             border: "1.5px solid #e0e0e0",
             fontSize: "15px", outline: "none",
-            boxSizing: "border-box", color: "#1a1a1a"
+            boxSizing: "border-box", color: "var(--text)"
           }}
         />
 
@@ -142,7 +142,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
           <div style={{
             position: "absolute", top: "100%", left: 0, right: 0,
             border: "1.5px solid #e0e0e0", borderRadius: "10px",
-            marginTop: "4px", background: "white", zIndex: 100,
+            marginTop: "4px", background: "var(--bg)", zIndex: 100,
             maxHeight: "200px", overflowY: "auto",
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
           }}>
@@ -152,7 +152,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
                 onClick={() => selectInterest(s)}
                 style={{
                   padding: "10px 14px", cursor: "pointer",
-                  fontSize: "14px", color: "#1a1a1a",
+                  fontSize: "14px", color: "var(--text)",
                   borderBottom: "0.5px solid #f0f0f0"
                 }}
                 onMouseEnter={e => e.currentTarget.style.background = "#f5f5ff"}
@@ -168,15 +168,15 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
           <div style={{
             position: "absolute", top: "100%", left: 0, right: 0,
             border: "1.5px solid #e0e0e0", borderRadius: "10px",
-            marginTop: "4px", background: "white", zIndex: 100,
-            padding: "12px 14px", color: "#888", fontSize: "14px"
+            marginTop: "4px", background: "var(--bg)", zIndex: 100,
+            padding: "12px 14px", color: "var(--text-muted)", fontSize: "14px"
           }}>
             No matches — press + to add "{normalise(input)}" as a new interest!
           </div>
         )}
       </div>
 
-      <p style={{ fontSize: "12px", color: "#888", marginTop: "8px" }}>
+      <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "8px" }}>
         "AI", "ai", "A I" are all treated the same ~
       </p>
 
@@ -187,14 +187,14 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
           display: "flex", alignItems: "center", justifyContent: "center"
         }}>
           <div style={{
-            background: "white", borderRadius: "16px",
+            background: "var(--bg)", borderRadius: "16px",
             padding: "28px 24px", width: "90%", maxWidth: "360px",
             boxShadow: "0 8px 32px rgba(0,0,0,0.15)"
           }}>
-            <h3 style={{ margin: "0 0 8px", color: "#1a1a1a", fontSize: "18px" }}>
+            <h3 style={{ margin: "0 0 8px", color: "var(--text)", fontSize: "18px" }}>
               Add Custom Interest
             </h3>
-            <p style={{ margin: "0 0 16px", color: "#888", fontSize: "13px" }}>
+            <p style={{ margin: "0 0 16px", color: "var(--text-muted)", fontSize: "13px" }}>
               "Martial Arts", "MARTIALARTS", "martial arts" — all saved the same way!
             </p>
             <input
@@ -208,7 +208,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
                 borderRadius: "10px", border: "1.5px solid #e0e0e0",
                 fontSize: "15px", outline: "none",
                 boxSizing: "border-box", marginBottom: "16px",
-                color: "#1a1a1a"
+                color: "var(--text)"
               }}
             />
             {customInput && (
@@ -221,7 +221,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
                 onClick={() => { setShowAddModal(false); setCustomInput(""); }}
                 style={{
                   flex: 1, padding: "12px",
-                  background: "white", color: "#4F46E5",
+                  background: "var(--bg)", color: "#4F46E5",
                   border: "2px solid #4F46E5", borderRadius: "10px",
                   cursor: "pointer", fontSize: "15px", fontWeight: "bold"
                 }}
@@ -232,7 +232,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
                 onClick={handleAddCustom}
                 style={{
                   flex: 1, padding: "12px",
-                  background: "#4F46E5", color: "white",
+                  background: "#4F46E5", color: "var(--bg)",
                   border: "none", borderRadius: "10px",
                   cursor: "pointer", fontSize: "15px", fontWeight: "bold"
                 }}

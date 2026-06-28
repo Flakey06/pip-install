@@ -86,11 +86,21 @@ export default function GroupInfo() {
     setShowVideoCall(true);
   };
 
+
   const handleLeave = async () => {
     if (!window.confirm("Leave this group?")) return;
+    const messagesRef = ref(rtdb, `chats/${groupId}/messages`);
+    await push(messagesRef, {
+      text: `${profile?.username || "Someone"} has left the group 👋`,
+      senderId: "system", senderName: "system", senderPhoto: "",
+      timestamp: Date.now(), type: "system"
+    });
+    await new Promise(r => setTimeout(r, 300));
     await leaveGroup(groupId);
     navigate("/groups");
   };
+
+
 
   if (!groupData) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
@@ -99,7 +109,7 @@ export default function GroupInfo() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "white", paddingBottom: "40px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: "40px" }}>
 
       <div className="header">
         <button onClick={() => navigate(`/chat/${groupId}`)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex" }}>
@@ -116,7 +126,7 @@ export default function GroupInfo() {
         <div style={{ position: "relative", display: "inline-block", marginBottom: "14px" }}>
           <div style={{
             width: "90px", height: "90px", borderRadius: "50%",
-            background: "#f0f0f0", border: "1px solid var(--border)",
+            background: "var(--border)", border: "1px solid var(--border)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "36px", margin: "0 auto", overflow: "hidden"
           }}>
@@ -129,7 +139,7 @@ export default function GroupInfo() {
           <button onClick={() => setShowAvatarPicker(true)} style={{
             position: "absolute", bottom: 2, right: 2,
             width: "26px", height: "26px", borderRadius: "50%",
-            background: "#0f0f0f", color: "white",
+            background: "var(--purple-dark)", color: "var(--bg)",
             border: "2px solid white", cursor: "pointer",
             fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center"
           }}>✎</button>
@@ -152,12 +162,12 @@ export default function GroupInfo() {
             />
             <div style={{ display: "flex", gap: "8px" }}>
               <button onClick={randomiseName} style={{
-                background: "#f5f5f5", border: "1px solid var(--border)",
+                background: "var(--card)", border: "1px solid var(--border)",
                 borderRadius: "8px", padding: "6px 12px", fontSize: "12px",
                 cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: "600"
               }}>🎲 Random</button>
               <button onClick={saveName} disabled={saving} style={{
-                background: "#0f0f0f", color: "white", border: "none",
+                background: "var(--purple-dark)", color: "var(--bg)", border: "none",
                 borderRadius: "8px", padding: "6px 16px", fontSize: "12px",
                 cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: "600"
               }}>{saving ? "..." : "Save"}</button>
@@ -175,10 +185,10 @@ export default function GroupInfo() {
               {/* change name */}
               <button onClick={() => setEditingName(true)} style={{
                 background: "none", border: "none", cursor: "pointer",
-                color: "#8e8e8e", fontSize: "14px", marginLeft: "6px", verticalAlign: "middle"
+                color: "var(--text-muted)", fontSize: "14px", marginLeft: "6px", verticalAlign: "middle"
               }}>✎</button>
             </p>
-            <p style={{ fontSize: "13px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+            <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
               {members.length}/6 members
             </p>
           </div>
@@ -210,12 +220,12 @@ export default function GroupInfo() {
             <button key={item.label} onClick={item.action} style={{
               flex: 1, display: "flex", flexDirection: "column",
               alignItems: "center", gap: "4px",
-              padding: "10px 0", background: "#fafafa",
+              padding: "10px 0", background: "var(--card)",
               border: "1px solid var(--border)", borderRadius: "12px",
               cursor: "pointer", fontFamily: "Inter, sans-serif"
             }}>
               <span style={{ fontSize: "20px" }}>{item.icon}</span>
-              <span style={{ fontSize: "11px", fontWeight: "600", color: "#0f0f0f" }}>{item.label}</span>
+              <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--text)" }}>{item.label}</span>
             </button>
           ))}
         </div>
@@ -228,7 +238,7 @@ export default function GroupInfo() {
               <p style={{ fontWeight: "600", fontSize: "15px", margin: "0 0 2px", fontFamily: "Inter, sans-serif" }}>
                 Chat History for New Members
               </p>
-              <p style={{ fontSize: "12px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
                 {groupData.historyForAll
                   ? "New members can see all past messages"
                   : "New members only see messages after joining"}
@@ -244,7 +254,7 @@ export default function GroupInfo() {
                 position: "absolute", top: "3px",
                 left: groupData.historyForAll ? "21px" : "3px",
                 width: "20px", height: "20px", borderRadius: "50%",
-                background: "white", transition: "left 0.2s",
+                background: "var(--bg)", transition: "left 0.2s",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
               }} />
             </div>
@@ -269,7 +279,7 @@ export default function GroupInfo() {
                     {m.username}
                   </p>
                   {m.uid === me && (
-                    <span style={{ fontSize: "11px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>you</span>
+                    <span style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>you</span>
                   )}
                   {groupData.adminId === m.uid && (
                     <span style={{
@@ -280,7 +290,7 @@ export default function GroupInfo() {
                     }}>Admin</span>
                   )}
                 </div>
-                <p style={{ fontSize: "12px", color: "#8e8e8e", margin: "2px 0 0", fontFamily: "Inter, sans-serif" }}>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "2px 0 0", fontFamily: "Inter, sans-serif" }}>
                   {m.major} · Year {m.year}
                 </p>
               </div>
@@ -298,7 +308,7 @@ export default function GroupInfo() {
       {/* Leave */}
       <div style={{ padding: "20px 16px 0" }}>
         <button onClick={handleLeave} style={{
-          width: "100%", padding: "14px", background: "white",
+          width: "100%", padding: "14px", background: "var(--bg)",
           border: "1px solid #ed4956", borderRadius: "12px",
           color: "#ed4956", fontSize: "15px", fontWeight: "600",
           cursor: "pointer", fontFamily: "Inter, sans-serif"

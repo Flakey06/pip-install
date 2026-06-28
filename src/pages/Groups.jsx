@@ -45,17 +45,17 @@ export default function Groups() {
     <div className="page">
       <div className="header">
         <span className="header-title">Messages</span>
-        <span style={{ fontSize: "12px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>
+        <span style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>
           {groups.length}/{maxGroups} groups
         </span>
       </div>
 
       <div style={{
-        padding: "10px 16px", background: "#fafafa",
+        padding: "10px 16px", background: "var(--card)",
         borderBottom: "1px solid var(--border)",
         display: "flex", alignItems: "center", justifyContent: "space-between"
       }}>
-        <p style={{ fontSize: "13px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+        <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
           Your matched & joined groups
         </p>
         <button
@@ -92,7 +92,7 @@ export default function Groups() {
               <div className="list-row" onClick={() => canChat && navigate(`/chat/${group.id}`)}>
                 <div style={{
                   width: "52px", height: "52px", borderRadius: "50%",
-                  background: "#f0f0f0", flexShrink: 0,
+                  background: "var(--border)", flexShrink: 0,
                   border: "1px solid var(--border)",
                   overflow: "hidden",
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -110,13 +110,13 @@ export default function Groups() {
                     </p>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
                       {unread > 0 && (
-                        <span style={{ background: "#0f0f0f", color: "white", borderRadius: "10px", fontSize: "11px", fontWeight: "700", padding: "1px 7px" }}>
+                        <span style={{ background: "var(--purple-dark)", color: "var(--bg)", borderRadius: "10px", fontSize: "11px", fontWeight: "700", padding: "1px 7px" }}>
                           {unread}
                         </span>
                       )}
                     </div>
                   </div>
-                  <p style={{ fontSize: "13px", color: "#8e8e8e", margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {canChat ? (group.sharedInterests?.join(", ") || "No common interests") : "Waiting for more members..."}
                   </p>
                 </div>

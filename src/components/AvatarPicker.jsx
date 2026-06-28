@@ -134,7 +134,7 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
       fontSize: "12px", fontWeight: "600",
       background: selected ? "#0f0f0f" : "white",
       color: selected ? "white" : "#0f0f0f",
-      border: "1px solid #dbdbdb",
+      border: "1px solid var(--border)",
       fontFamily: "Inter, sans-serif"
     }}>
       {label}
@@ -148,12 +148,12 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
       display: "flex", alignItems: "flex-end", justifyContent: "center"
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "white", borderRadius: "16px 16px 0 0",
+        background: "var(--bg)", borderRadius: "16px 16px 0 0",
         padding: "20px", width: "100%", maxWidth: "480px",
         paddingBottom: "40px", maxHeight: "88vh", overflowY: "auto"
       }}>
         <div style={{ width: "36px", height: "4px", background: "#dbdbdb", borderRadius: "2px", margin: "0 auto 16px" }} />
-        <h3 style={{ fontSize: "17px", fontWeight: "700", color: "#0f0f0f", marginBottom: "20px", textAlign: "center", fontFamily: "Inter, sans-serif" }}>
+        <h3 style={{ fontSize: "17px", fontWeight: "700", color: "var(--text)", marginBottom: "20px", textAlign: "center", fontFamily: "Inter, sans-serif" }}>
           Change Profile Photo
         </h3>
 
@@ -170,19 +170,19 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
               { label: "Build Cartoon Avatar", action: () => setMode("cartoon") },
             ].map((item, i) => (
               <button key={item.label} onClick={item.action} style={{
-                padding: "16px", background: "white", border: "none",
+                padding: "16px", background: "var(--bg)", border: "none",
                 borderBottom: i === 0 ? "1px solid #dbdbdb" : "none",
                 fontSize: "15px", fontWeight: "600", cursor: "pointer",
-                color: "#0f0f0f", fontFamily: "Inter, sans-serif",
+                color: "var(--text)", fontFamily: "Inter, sans-serif",
                 textAlign: "center"
               }}>
                 {item.label}
               </button>
             ))}
             <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleUpload} />
-            {uploading && <p style={{ textAlign: "center", color: "#8e8e8e", marginTop: "12px", fontSize: "13px" }}>Processing...</p>}
+            {uploading && <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "12px", fontSize: "13px" }}>Processing...</p>}
             <button onClick={onClose} style={{
-              padding: "16px", background: "white", border: "none",
+              padding: "16px", background: "var(--bg)", border: "none",
               borderTop: "8px solid #fafafa",
               fontSize: "15px", cursor: "pointer", color: "#ed4956",
               fontFamily: "Inter, sans-serif", fontWeight: "600", textAlign: "center"
@@ -198,11 +198,11 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
               <div style={{
                 width: "96px", height: "96px", borderRadius: "50%",
                 margin: "0 auto", overflow: "hidden",
-                border: "1px solid #dbdbdb"
+                border: "1px solid var(--border)"
               }}>
                 <CartoonAvatar options={options} size={96} />
               </div>
-              <p style={{ fontSize: "12px", color: "#8e8e8e", marginTop: "8px", fontFamily: "Inter, sans-serif" }}>Live preview</p>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "8px", fontFamily: "Inter, sans-serif" }}>Live preview</p>
             </div>
 
             {[
@@ -213,7 +213,7 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
               { label: "Mouth", items: MOUTH_STYLES, key: "mouth", type: "btn" },
             ].map(section => (
               <div key={section.key} style={{ marginBottom: "16px" }}>
-                <p style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase", color: "#8e8e8e", marginBottom: "8px", fontFamily: "Inter, sans-serif" }}>
+                <p style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "8px", fontFamily: "Inter, sans-serif" }}>
                   {section.label}
                 </p>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -228,14 +228,14 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
 
             <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
               <button onClick={() => setMode("choose")} style={{
-                flex: 1, padding: "12px", background: "#fafafa",
-                border: "1px solid #dbdbdb", borderRadius: "10px",
+                flex: 1, padding: "12px", background: "var(--card)",
+                border: "1px solid var(--border)", borderRadius: "10px",
                 fontSize: "14px", fontWeight: "600", cursor: "pointer",
                 fontFamily: "Inter, sans-serif"
               }}>Back</button>
               <button onClick={saveCartoon} disabled={uploading} style={{
-                flex: 1, padding: "12px", background: "#0f0f0f",
-                border: "none", borderRadius: "10px", color: "white",
+                flex: 1, padding: "12px", background: "var(--purple-dark)",
+                border: "none", borderRadius: "10px", color: "var(--bg)",
                 fontSize: "14px", fontWeight: "600", cursor: "pointer",
                 fontFamily: "Inter, sans-serif",
                 opacity: uploading ? 0.6 : 1

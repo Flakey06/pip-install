@@ -95,7 +95,7 @@ export default function VideoCall({ groupId, groupName, onClose }) {
               <div style={{
                 width: "28px", height: "28px", borderRadius: "50%",
                 background: "linear-gradient(135deg, var(--purple-mid), var(--purple-dark))",
-                color: "white", fontSize: "13px", fontWeight: "800",
+                color: "var(--bg)", fontSize: "13px", fontWeight: "800",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, boxShadow: "2px 2px 0px var(--purple-dark)"
               }}>

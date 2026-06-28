@@ -87,15 +87,27 @@ export async function joinRandomGroup(userProfile) {
   return { success: true, groupId: newGroup.id, waitingForMembers: true };
 }
 
-export async function leaveGroup(groupId) {
-  const uid = auth.currentUser.uid;
-  await updateDoc(doc(db, "groups", groupId), {
-    members: arrayRemove(uid)
-  });
-  await updateDoc(doc(db, "users", uid), {
-    groups: arrayRemove(groupId)
-  });
-  return { success: true };
-}
+  export async function leaveGroup(groupId) {
+    const uid = auth.currentUser.uid;
+
+    // Transfer admin rights if this user is admin
+    const groupSnap = await getDoc(doc(db, "groups", groupId));
+    if (groupSnap.exists()) {
+      const data = groupSnap.data();
+      if (data.adminId === uid) {
+        const nextAdmin = (data.members || []).find(m => m !== uid);
+        if (nextAdmin) {
+          await updateDoc(doc(db, "groups", groupId), { adminId: nextAdmin });
+        }
+      }
+    }
+
+    await updateDoc(doc(db, "groups", groupId), { members: arrayRemove(uid) });
+    await updateDoc(doc(db, "users", uid), { groups: arrayRemove(groupId) });
+    return { success: true };
+  }
+
+
+
 
 export { MIN_MEMBERS_FOR_CHAT };

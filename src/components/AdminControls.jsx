@@ -31,18 +31,18 @@ function AdminControls({ group, members, onClose }) {
       display: "flex", alignItems: "flex-end", justifyContent: "center"
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "white", borderRadius: "24px 24px 0 0",
+        background: "var(--bg)", borderRadius: "24px 24px 0 0",
         padding: "24px", width: "100%", maxWidth: "480px", paddingBottom: "40px"
       }}>
         <div style={{ width: "40px", height: "4px", background: "#e0e0e0", borderRadius: "2px", margin: "0 auto 20px" }} />
-        <h3 style={{ margin: "0 0 4px", color: "#1a1a1a", fontSize: "18px" }}>Admin Controls</h3>
-        <p style={{ margin: "0 0 20px", color: "#888", fontSize: "13px" }}>You are the admin of this group</p>
+        <h3 style={{ margin: "0 0 4px", color: "var(--text)", fontSize: "18px" }}>Admin Controls</h3>
+        <p style={{ margin: "0 0 20px", color: "var(--text-muted)", fontSize: "13px" }}>You are the admin of this group</p>
 
         {message ? (
           <p style={{ textAlign: "center", color: "#4F46E5", fontWeight: "bold" }}>{message}</p>
         ) : (
           <>
-            <p style={{ fontWeight: "bold", fontSize: "14px", color: "#1a1a1a", marginBottom: "10px" }}>
+            <p style={{ fontWeight: "bold", fontSize: "14px", color: "var(--text)", marginBottom: "10px" }}>
               Transfer admin rights to:
             </p>
             {otherMembers.length === 0 ? (
@@ -57,19 +57,19 @@ function AdminControls({ group, members, onClose }) {
                   cursor: "pointer"
                 }}>
                   <img src={m.photoURL} style={{ width: "36px", height: "36px", borderRadius: "50%" }} />
-                  <p style={{ margin: 0, fontWeight: "bold", color: "#1a1a1a" }}>{m.username}</p>
+                  <p style={{ margin: 0, fontWeight: "bold", color: "var(--text)" }}>{m.username}</p>
                 </div>
               ))
             )}
             <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
               <button onClick={onClose} style={{
-                flex: 1, padding: "12px", background: "white",
+                flex: 1, padding: "12px", background: "var(--bg)",
                 color: "#4F46E5", border: "2px solid #4F46E5",
                 borderRadius: "12px", cursor: "pointer", fontSize: "15px", fontWeight: "bold"
               }}>Cancel</button>
               <button onClick={handleTransfer} disabled={loading || !transferTo} style={{
                 flex: 1, padding: "12px", background: transferTo ? "#4F46E5" : "#e0e0e0",
-                color: "white", border: "none", borderRadius: "12px",
+                color: "var(--bg)", border: "none", borderRadius: "12px",
                 cursor: transferTo ? "pointer" : "default", fontSize: "15px", fontWeight: "bold"
               }}>
                 {loading ? "Transferring..." : "Transfer"}

@@ -57,7 +57,7 @@ export default function Credits() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "white", paddingBottom: "40px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: "40px" }}>
       <div className="header">
         <button onClick={() => navigate("/home")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -69,17 +69,17 @@ export default function Credits() {
       </div>
 
       
-      <div style={{ margin: "16px", padding: "28px 20px", background: "#0f0f0f", borderRadius: "20px", textAlign: "center" }}>
+      <div style={{ margin: "16px", padding: "28px 20px", background: "var(--purple-dark)", borderRadius: "20px", textAlign: "center" }}>
         <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", margin: "0 0 8px", fontFamily: "Inter, sans-serif", fontWeight: "600", letterSpacing: "0.1em", textTransform: "uppercase" }}>
           Your Balance
         </p>
-        <p style={{ fontSize: "56px", fontWeight: "800", margin: "0 0 4px", fontFamily: "Inter, sans-serif", color: "white" }}>
+        <p style={{ fontSize: "56px", fontWeight: "800", margin: "0 0 4px", fontFamily: "Inter, sans-serif", color: "var(--bg)" }}>
           {credits}
         </p>
         <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.5)", margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>pip coins 🪙</p>
         <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px 16px", display: "inline-block" }}>
           <span style={{ fontSize: "14px", fontFamily: "Inter, sans-serif", color: "rgba(255,255,255,0.8)" }}>
-            Group limit: <strong style={{ color: "white" }}>{maxGroups} groups</strong>
+            Group limit: <strong style={{ color: "var(--bg)" }}>{maxGroups} groups</strong>
           </span>
         </div>
       </div>
@@ -119,7 +119,7 @@ export default function Credits() {
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontWeight: "700", fontSize: "15px", margin: "0 0 2px", fontFamily: "Inter, sans-serif" }}>{label}</p>
-                <p style={{ fontSize: "12px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
                   {unlocked ? "Unlocked ✓" : `${cost} 🪙 · ${desc}`}
                 </p>
               </div>

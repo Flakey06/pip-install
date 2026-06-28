@@ -85,7 +85,7 @@ export default function CreateProfile() {
                 position: "absolute", bottom: "2px", right: "2px", zIndex: 2,
                 width: "26px", height: "26px", borderRadius: "50%",
                 background: "linear-gradient(135deg, var(--purple), var(--purple-dark))",
-                color: "white", border: "2px solid white",
+                color: "var(--bg)", border: "2px solid white",
                 cursor: "pointer", fontSize: "13px",
                 display: "flex", alignItems: "center", justifyContent: "center"
               }}>+</button>

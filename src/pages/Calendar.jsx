@@ -35,7 +35,7 @@ export default function Calendar() {
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <div style={{ minHeight: "100vh", background: "white", paddingBottom: "80px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: "80px" }}>
       <div className="header">
         <button onClick={() => navigate("/home")} style={{ background: "none", border: "none", cursor: "pointer" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -54,7 +54,7 @@ export default function Calendar() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px", marginBottom: "4px" }}>
         {DAYS.map(d => (
-          <p key={d} style={{ textAlign: "center", fontSize: "11px", fontWeight: "600", color: "#8e8e8e", margin: 0, padding: "4px 0", fontFamily: "Inter, sans-serif" }}>{d}</p>
+          <p key={d} style={{ textAlign: "center", fontSize: "11px", fontWeight: "600", color: "var(--text-muted)", margin: 0, padding: "4px 0", fontFamily: "Inter, sans-serif" }}>{d}</p>
         ))}
       </div>
 
@@ -95,12 +95,12 @@ export default function Calendar() {
               {selectedDate}
             </p>
             {eventsOnDate(selectedDate).length === 0 ? (
-              <p style={{ fontSize: "14px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>No events on this day.</p>
+              <p style={{ fontSize: "14px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>No events on this day.</p>
             ) : (
               eventsOnDate(selectedDate).map(event => (
-                <div key={event.id} style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--border)", marginBottom: "8px", background: "#fafafa" }}>
+                <div key={event.id} style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--border)", marginBottom: "8px", background: "var(--card)" }}>
                   <p style={{ fontWeight: "700", fontSize: "14px", margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>{event.title}</p>
-                  <p style={{ fontSize: "13px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+                  <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
                     🕐 {event.time}{event.location ? ` · ${event.location}` : ""}
                   </p>
                   {event.groupId && (
@@ -116,24 +116,24 @@ export default function Calendar() {
           <>
             <p className="section-label" style={{ padding: "0 0 8px" }}>This Month ({monthEvents.length} events)</p>
             {monthEvents.length === 0 ? (
-              <p style={{ fontSize: "14px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>
+              <p style={{ fontSize: "14px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>
                 No events this month. Events from group chats will appear here!
               </p>
             ) : (
               monthEvents.map(event => (
-                <div key={event.id} style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--border)", marginBottom: "8px", background: "#fafafa" }}>
+                <div key={event.id} style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--border)", marginBottom: "8px", background: "var(--card)" }}>
                   <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                     <div style={{ textAlign: "center", minWidth: "36px" }}>
                       <p style={{ fontSize: "18px", fontWeight: "700", margin: 0, color: "var(--purple-dark)", fontFamily: "Inter, sans-serif" }}>
                         {parseInt(event.date?.split("-")[2])}
                       </p>
-                      <p style={{ fontSize: "10px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+                      <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
                         {MONTHS[parseInt(event.date?.split("-")[1])-1]?.slice(0,3)}
                       </p>
                     </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontWeight: "700", fontSize: "14px", margin: "0 0 2px", fontFamily: "Inter, sans-serif" }}>{event.title}</p>
-                      <p style={{ fontSize: "12px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+                      <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
                         🕐 {event.time}{event.location ? ` · ${event.location}` : ""}
                       </p>
                     </div>

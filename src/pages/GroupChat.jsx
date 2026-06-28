@@ -131,14 +131,14 @@ export default function GroupChat() {
   return (
     <div style={{
       height: "100vh", display: "flex", flexDirection: "column",
-      background: "white", maxWidth: "480px", margin: "0 auto"
+      background: "var(--bg)", maxWidth: "480px", margin: "0 auto"
     }}>
 
       <div style={{
         padding: "10px 16px",
-        borderBottom: "1px solid #f0f0f0",
+        borderBottom: "1px solid var(--border)",
         display: "flex", alignItems: "center", gap: "10px",
-        background: "white", flexShrink: 0
+        background: "var(--bg)", flexShrink: 0
       }}>
         <button onClick={() => navigate("/groups")} style={{
           background: "none", border: "none", cursor: "pointer",
@@ -156,7 +156,7 @@ export default function GroupChat() {
         }}>
           <div style={{
             width: "36px", height: "36px", borderRadius: "50%",
-            background: "#f0f0f0", border: "1px solid #e0e0e0",
+            background: "var(--border)", border: "1px solid var(--border)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "18px", flexShrink: 0, overflow: "hidden"
           }}>
@@ -167,13 +167,13 @@ export default function GroupChat() {
           </div>
           <div style={{ minWidth: 0 }}>
             <p style={{
-              margin: 0, fontWeight: "700", fontSize: "15px", color: "#0f0f0f",
+              margin: 0, fontWeight: "700", fontSize: "15px", color: "var(--text)",
               fontFamily: "Inter, sans-serif",
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
             }}>
               {groupData?.name || "Group Chat"}
             </p>
-            <p style={{ margin: 0, fontSize: "11px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>
+            <p style={{ margin: 0, fontSize: "11px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>
               {members.length} members · tap for info
             </p>
           </div>
@@ -194,10 +194,10 @@ export default function GroupChat() {
           {members.length > 3 && (
             <div style={{
               width: "26px", height: "26px", borderRadius: "50%",
-              background: "#f0f0f0", fontSize: "10px", fontWeight: "700",
+              background: "var(--border)", fontSize: "10px", fontWeight: "700",
               display: "flex", alignItems: "center", justifyContent: "center",
               marginLeft: "-8px", border: "2px solid white",
-              color: "#0f0f0f", fontFamily: "Inter, sans-serif", flexShrink: 0
+              color: "var(--text)", fontFamily: "Inter, sans-serif", flexShrink: 0
             }}>
               +{members.length - 3}
             </div>
@@ -208,16 +208,16 @@ export default function GroupChat() {
       {/* common hobbies */}
       {groupData?.sharedInterests?.length > 0 && (
         <div style={{
-          padding: "6px 16px", background: "#fafafa",
-          borderBottom: "1px solid #f0f0f0",
+          padding: "6px 16px", background: "var(--card)",
+          borderBottom: "1px solid var(--border)",
           display: "flex", gap: "6px", flexWrap: "wrap",
           alignItems: "center", flexShrink: 0
         }}>
-          <span style={{ fontSize: "11px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>Common:</span>
+          <span style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>Common:</span>
           {groupData.sharedInterests.map(i => (
             <span key={i} style={{
               padding: "2px 8px", borderRadius: "20px",
-              background: "#0f0f0f", color: "white",
+              background: "var(--purple-dark)", color: "var(--bg)",
               fontSize: "11px", fontFamily: "Inter, sans-serif", fontWeight: "500"
             }}>
               {i}
@@ -229,24 +229,24 @@ export default function GroupChat() {
       {/* topics*/}
       {topic && (
         <div style={{
-          padding: "8px 16px", background: "white",
-          borderBottom: "1px solid #f0f0f0", flexShrink: 0
+          padding: "8px 16px", background: "var(--bg)",
+          borderBottom: "1px solid var(--border)", flexShrink: 0
         }}>
           <div style={{
-            background: "#fafafa", borderRadius: "10px",
+            background: "var(--card)", borderRadius: "10px",
             padding: "8px 12px", border: "1px solid #f0f0f0",
             display: "flex", justifyContent: "space-between", alignItems: "center"
           }}>
             <div style={{ flex: 1 }}>
-              <p style={{ margin: "0 0 2px", fontSize: "10px", fontWeight: "700", color: "#8e8e8e", fontFamily: "Inter, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <p style={{ margin: "0 0 2px", fontSize: "10px", fontWeight: "700", color: "var(--text-muted)", fontFamily: "Inter, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 Topic
               </p>
-              <p style={{ margin: 0, fontSize: "13px", color: "#0f0f0f", fontFamily: "Inter, sans-serif", lineHeight: "1.4" }}>
+              <p style={{ margin: 0, fontSize: "13px", color: "var(--text)", fontFamily: "Inter, sans-serif", lineHeight: "1.4" }}>
                 {topic}
               </p>
             </div>
             <button onClick={() => setTopic(generateTopic(groupData?.sharedInterests || []))}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#8e8e8e", fontSize: "16px", padding: "0 0 0 8px" }}>
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "16px", padding: "0 0 0 8px" }}>
               ↺
             </button>
           </div>
@@ -259,7 +259,7 @@ export default function GroupChat() {
         display: "flex", flexDirection: "column", gap: "1px"
       }}>
         {messages.length === 0 && (
-          <div style={{ textAlign: "center", color: "#8e8e8e", marginTop: "60px" }}>
+          <div style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "60px" }}>
             <p style={{ fontSize: "32px", marginBottom: "8px" }}>👋</p>
             <p style={{ fontSize: "14px", fontFamily: "Inter, sans-serif" }}>Say hi to your group!</p>
           </div>
@@ -290,8 +290,8 @@ export default function GroupChat() {
             return (
               <div key={msg.id} style={{ textAlign: "center", margin: "10px 0" }}>
                 <span style={{
-                  fontSize: "12px", color: "#8e8e8e",
-                  background: "#f5f5f5", padding: "4px 12px",
+                  fontSize: "12px", color: "var(--text-muted)",
+                  background: "var(--card)", padding: "4px 12px",
                   borderRadius: "20px", fontFamily: "Inter, sans-serif"
                 }}>
                   {msg.text}
@@ -327,7 +327,7 @@ export default function GroupChat() {
               <div style={{ maxWidth: "68%", display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start" }}>
                 {/* Sender name */}
                 {!mine && isFirst && (
-                  <p style={{ margin: "0 0 3px 4px", fontSize: "11px", fontWeight: "600", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>
+                  <p style={{ margin: "0 0 3px 4px", fontSize: "11px", fontWeight: "600", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>
                     {msg.senderName}
                   </p>
                 )}
@@ -348,7 +348,7 @@ export default function GroupChat() {
 
                 {/* Timestamp */}
                 {isLast && (
-                  <p style={{ margin: "2px 4px 0", fontSize: "10px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>
+                  <p style={{ margin: "2px 4px 0", fontSize: "10px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>
                     {formatTime(msg.timestamp)}
                   </p>
                 )}
@@ -363,13 +363,13 @@ export default function GroupChat() {
       {/* input bar */}
       <div style={{
         padding: "10px 16px 28px",
-        borderTop: "1px solid #f0f0f0",
-        background: "white", flexShrink: 0,
+        borderTop: "1px solid var(--border)",
+        background: "var(--bg)", flexShrink: 0,
         display: "flex", alignItems: "flex-end", gap: "10px"
       }}>
         <div style={{
           flex: 1, display: "flex", alignItems: "flex-end",
-          background: "#f5f5f5", borderRadius: "22px",
+          background: "var(--card)", borderRadius: "22px",
           padding: "10px 16px",
           border: "1px solid #ebebeb", minHeight: "44px"
         }}>
@@ -387,7 +387,7 @@ export default function GroupChat() {
             style={{
               flex: 1, background: "transparent", border: "none",
               outline: "none", resize: "none", fontSize: "15px",
-              fontFamily: "Inter, sans-serif", color: "#0f0f0f",
+              fontFamily: "Inter, sans-serif", color: "var(--text)",
               lineHeight: "1.4", maxHeight: "120px",
               overflowY: "auto", padding: 0
             }}

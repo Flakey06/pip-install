@@ -1,0 +1,18 @@
+in wsl, run the following in order
+
+python3 -m venv .venv
+source .venv/bin/activate
+sudo apt install git-lfs
+git lfs install
+git lfs pull
+pip install tensorflow==2.20
+pip install tensorflow-text==2.20
+pip install tensorflow-hub==0.16.1 --no-deps
+pip install tf-keras==2.20.0 pandas scikit-learn joblib openpyxl
+python -m pip uninstall -y setuptools
+python -m pip install "setuptools==80.9.0"
+cd "interest sorting algo (not integrated)"
+
+
+to test, run the following code, replacing interest with the interest you want to test
+python3 interest_testing.py "interest"

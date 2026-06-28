@@ -42,7 +42,7 @@ function ReportModal({ reportedUid, reportedName, groupId, onClose }) {
       display: "flex", alignItems: "flex-end", justifyContent: "center"
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "white", borderRadius: "24px 24px 0 0",
+        background: "var(--bg)", borderRadius: "24px 24px 0 0",
         padding: "24px", width: "100%", maxWidth: "480px",
         paddingBottom: "40px", maxHeight: "90vh", overflowY: "auto"
       }}>
@@ -51,26 +51,26 @@ function ReportModal({ reportedUid, reportedName, groupId, onClose }) {
         {submitted ? (
           <div style={{ textAlign: "center", padding: "20px 0" }}>
             <div style={{ fontSize: "48px", marginBottom: "12px" }}>✅</div>
-            <h3 style={{ color: "#1a1a1a", marginBottom: "8px" }}>Report submitted</h3>
-            <p style={{ color: "#888", fontSize: "14px", marginBottom: "20px" }}>
+            <h3 style={{ color: "var(--text)", marginBottom: "8px" }}>Report submitted</h3>
+            <p style={{ color: "var(--text-muted)", fontSize: "14px", marginBottom: "20px" }}>
               Thank you for keeping pip install safe. We'll review this shortly.
             </p>
             <button onClick={onClose} style={{
               width: "100%", padding: "14px", background: "#4F46E5",
-              color: "white", border: "none", borderRadius: "12px",
+              color: "var(--bg)", border: "none", borderRadius: "12px",
               cursor: "pointer", fontSize: "16px", fontWeight: "bold"
             }}>Done</button>
           </div>
         ) : (
           <>
-            <h3 style={{ margin: "0 0 4px", color: "#1a1a1a", fontSize: "18px" }}>
+            <h3 style={{ margin: "0 0 4px", color: "var(--text)", fontSize: "18px" }}>
               Report {reportedName}
             </h3>
-            <p style={{ margin: "0 0 20px", color: "#888", fontSize: "13px" }}>
+            <p style={{ margin: "0 0 20px", color: "var(--text-muted)", fontSize: "13px" }}>
               Reports are anonymous. We take all reports seriously.
             </p>
 
-            <p style={{ fontWeight: "bold", fontSize: "14px", color: "#1a1a1a", marginBottom: "10px" }}>Reason *</p>
+            <p style={{ fontWeight: "bold", fontSize: "14px", color: "var(--text)", marginBottom: "10px" }}>Reason *</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
               {REASONS.map(r => (
                 <button key={r} onClick={() => setReason(r)} style={{
@@ -84,7 +84,7 @@ function ReportModal({ reportedUid, reportedName, groupId, onClose }) {
               ))}
             </div>
 
-            <p style={{ fontWeight: "bold", fontSize: "14px", color: "#1a1a1a", marginBottom: "8px" }}>
+            <p style={{ fontWeight: "bold", fontSize: "14px", color: "var(--text)", marginBottom: "8px" }}>
               Additional details (optional)
             </p>
             <textarea
@@ -96,20 +96,20 @@ function ReportModal({ reportedUid, reportedName, groupId, onClose }) {
                 border: "1.5px solid #e0e0e0", fontSize: "14px",
                 outline: "none", resize: "none", height: "80px",
                 boxSizing: "border-box", marginBottom: "16px",
-                fontFamily: "inherit", color: "#1a1a1a"
+                fontFamily: "inherit", color: "var(--text)"
               }}
             />
 
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={onClose} style={{
-                flex: 1, padding: "12px", background: "white",
+                flex: 1, padding: "12px", background: "var(--bg)",
                 color: "#4F46E5", border: "2px solid #4F46E5",
                 borderRadius: "12px", cursor: "pointer",
                 fontSize: "15px", fontWeight: "bold"
               }}>Cancel</button>
               <button onClick={handleSubmit} disabled={loading} style={{
                 flex: 1, padding: "12px", background: "#ef4444",
-                color: "white", border: "none", borderRadius: "12px",
+                color: "var(--bg)", border: "none", borderRadius: "12px",
                 cursor: "pointer", fontSize: "15px", fontWeight: "bold"
               }}>{loading ? "Submitting..." : "Submit Report"}</button>
             </div>

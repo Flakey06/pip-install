@@ -59,7 +59,7 @@ function MemberProfile({ uid, onClose }) {
     }} onClick={onClose}>
       <div
         style={{
-          background: "white", borderRadius: "24px 24px 0 0",
+          background: "var(--bg)", borderRadius: "24px 24px 0 0",
           padding: "28px 24px", width: "100%", maxWidth: "480px",
           paddingBottom: "40px"
         }}
@@ -74,8 +74,8 @@ function MemberProfile({ uid, onClose }) {
             style={{ width: "60px", height: "60px", borderRadius: "50%", border: "2px solid #4F46E5" }}
           />
           <div>
-            <h3 style={{ margin: 0, color: "#1a1a1a", fontSize: "18px" }}>{profile.username}</h3>
-            <p style={{ margin: "2px 0 0", color: "#888", fontSize: "13px" }}>{profile.major} · Year {profile.year}</p>
+            <h3 style={{ margin: 0, color: "var(--text)", fontSize: "18px" }}>{profile.username}</h3>
+            <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "13px" }}>{profile.major} · Year {profile.year}</p>
             {isFriend && profile.telegram && (
               <p style={{ margin: "4px 0 0", color: "#4F46E5", fontSize: "13px", fontWeight: "bold" }}>
                 📱 {profile.telegram}
@@ -91,12 +91,12 @@ function MemberProfile({ uid, onClose }) {
         )}
 
         <div style={{ marginBottom: "20px" }}>
-          <p style={{ fontWeight: "bold", color: "#1a1a1a", fontSize: "13px", marginBottom: "8px" }}>Interests</p>
+          <p style={{ fontWeight: "bold", color: "var(--text)", fontSize: "13px", marginBottom: "8px" }}>Interests</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {profile.interests?.map(i => (
               <span key={i} style={{
                 padding: "4px 12px", borderRadius: "20px",
-                background: "#4F46E5", color: "white", fontSize: "12px"
+                background: "#4F46E5", color: "var(--bg)", fontSize: "12px"
               }}>
                 {i}
               </span>
@@ -141,7 +141,7 @@ function MemberProfile({ uid, onClose }) {
             onClick={() => setShowReport(true)}
             style={{
               width: "100%", padding: "12px",
-              background: "white", color: "#ef4444",
+              background: "var(--bg)", color: "#ef4444",
               border: "1.5px solid #ef4444", borderRadius: "12px",
               cursor: "pointer", fontSize: "14px",
               fontWeight: "bold", marginTop: "10px"

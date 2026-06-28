@@ -71,7 +71,7 @@ export default function GroupCalendar() {
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <div style={{ minHeight: "100vh", background: "white", paddingBottom: "40px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: "40px" }}>
       <div className="header">
         <button onClick={() => navigate(-1)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -83,17 +83,17 @@ export default function GroupCalendar() {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px" }}>
-        <button onClick={() => setCurrentMonth(new Date(year, month - 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#0f0f0f" }}>‹</button>
+        <button onClick={() => setCurrentMonth(new Date(year, month - 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "var(--text)" }}>‹</button>
         <p style={{ fontWeight: "700", fontSize: "16px", fontFamily: "Inter, sans-serif", margin: 0 }}>
           {MONTHS[month]} {year}
         </p>
-        <button onClick={() => setCurrentMonth(new Date(year, month + 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#0f0f0f" }}>›</button>
+        <button onClick={() => setCurrentMonth(new Date(year, month + 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "var(--text)" }}>›</button>
       </div>
 
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px", marginBottom: "4px" }}>
         {DAYS.map(d => (
-          <p key={d} style={{ textAlign: "center", fontSize: "11px", fontWeight: "600", color: "#8e8e8e", margin: 0, padding: "4px 0", fontFamily: "Inter, sans-serif" }}>
+          <p key={d} style={{ textAlign: "center", fontSize: "11px", fontWeight: "600", color: "var(--text-muted)", margin: 0, padding: "4px 0", fontFamily: "Inter, sans-serif" }}>
             {d}
           </p>
         ))}
@@ -145,7 +145,7 @@ export default function GroupCalendar() {
             <button className="text-btn" onClick={() => { setShowAdd(true); }}>+ Event</button>
           </div>
           {eventsOnDate(selectedDate).length === 0 ? (
-            <p style={{ fontSize: "14px", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>No events — add one!</p>
+            <p style={{ fontSize: "14px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>No events — add one!</p>
           ) : (
             eventsOnDate(selectedDate).map(event => (
               <EventCard key={event.id} event={event} onDelete={() => handleDelete(event.id)} isOwner={event.createdBy === me} />
@@ -172,7 +172,7 @@ export default function GroupCalendar() {
           display: "flex", alignItems: "flex-end", justifyContent: "center"
         }} onClick={() => setShowAdd(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "white", borderRadius: "16px 16px 0 0",
+            background: "var(--bg)", borderRadius: "16px 16px 0 0",
             padding: "20px", width: "100%", maxWidth: "480px",
             paddingBottom: "40px", maxHeight: "85vh", overflowY: "auto"
           }}>
@@ -209,10 +209,10 @@ export default function GroupCalendar() {
 
             <div style={{
               padding: "10px 12px", borderRadius: "8px",
-              background: "#fafafa", border: "1px solid var(--border)",
+              background: "var(--card)", border: "1px solid var(--border)",
               marginBottom: "16px"
             }}>
-              <p style={{ fontSize: "12px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
                 📅 This event will appear in the group calendar and your personal calendar.
               </p>
             </div>
@@ -232,18 +232,18 @@ function EventCard({ event, onDelete, isOwner }) {
     <div style={{
       padding: "12px", borderRadius: "10px",
       border: "1px solid var(--border)", marginBottom: "8px",
-      background: "#fafafa"
+      background: "var(--card)"
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
           <p style={{ fontWeight: "700", fontSize: "14px", margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>
             {event.title}
           </p>
-          <p style={{ fontSize: "13px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+          <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
             🕐 {event.time}{event.location ? ` · 📍 ${event.location}` : ""}
           </p>
           {event.note && (
-            <p style={{ fontSize: "13px", color: "#8e8e8e", margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>
+            <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>
               {event.note}
             </p>
           )}

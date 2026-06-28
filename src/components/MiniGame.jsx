@@ -116,7 +116,7 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
         <div style={{
           position: "fixed", top: "40px", left: "50%",
           transform: "translateX(-50%)",
-          background: "#0f0f0f", color: "white",
+          background: "var(--purple-dark)", color: "var(--bg)",
           padding: "12px 24px", borderRadius: "24px",
           fontSize: "15px", fontWeight: "700",
           fontFamily: "Inter, sans-serif",
@@ -129,7 +129,7 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
       )}
 
       <div onClick={e => e.stopPropagation()} style={{
-        background: "white", borderRadius: "20px 20px 0 0",
+        background: "var(--bg)", borderRadius: "20px 20px 0 0",
         padding: "20px 20px 48px", width: "100%", maxWidth: "480px",
         maxHeight: "88vh", overflowY: "auto"
       }}>
@@ -143,7 +143,7 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
               <h3 style={{ fontSize: "20px", fontWeight: "700", margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>
                 Mini Games
               </h3>
-              <p style={{ fontSize: "13px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+              <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
                 Play with your group · earn 🪙 coins
               </p>
             </div>
@@ -156,22 +156,22 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
                 <button key={item.title} onClick={item.action} style={{
                   display: "flex", alignItems: "center", gap: "16px",
                   padding: "16px", borderRadius: "14px",
-                  background: "#fafafa", border: "1px solid #e8e8e8",
+                  background: "var(--card)", border: "1px solid var(--border)",
                   cursor: "pointer", textAlign: "left",
                   fontFamily: "Inter, sans-serif"
                 }}>
                   <span style={{ fontSize: "32px", flexShrink: 0 }}>{item.icon}</span>
                   <div>
-                    <p style={{ margin: "0 0 3px", fontWeight: "700", fontSize: "15px", color: "#0f0f0f" }}>{item.title}</p>
-                    <p style={{ margin: 0, fontSize: "12px", color: "#8e8e8e" }}>{item.desc}</p>
+                    <p style={{ margin: "0 0 3px", fontWeight: "700", fontSize: "15px", color: "var(--text)" }}>{item.title}</p>
+                    <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)" }}>{item.desc}</p>
                   </div>
                 </button>
               ))}
             </div>
 
             <button onClick={onClose} style={{
-              width: "100%", padding: "13px", background: "#fafafa",
-              border: "1px solid #e8e8e8", borderRadius: "12px",
+              width: "100%", padding: "13px", background: "var(--card)",
+              border: "1px solid var(--border)", borderRadius: "12px",
               fontSize: "14px", fontWeight: "600", cursor: "pointer",
               fontFamily: "Inter, sans-serif"
             }}>
@@ -187,11 +187,11 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
               <h3 style={{ fontSize: "17px", fontWeight: "700", margin: 0, fontFamily: "Inter, sans-serif" }}>
                 🤔 Would You Rather
               </h3>
-              <button onClick={endGame} style={{ background: "none", border: "none", color: "#8e8e8e", fontSize: "20px", cursor: "pointer" }}>✕</button>
+              <button onClick={endGame} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "20px", cursor: "pointer" }}>✕</button>
             </div>
-            <p style={{ fontSize: "12px", color: "#8e8e8e", margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
               {totalVotes}/{members.length} voted
-              {!myVote && <span style={{ color: "#0f0f0f", fontWeight: "600" }}> · +2 🪙 for voting</span>}
+              {!myVote && <span style={{ color: "var(--text)", fontWeight: "600" }}> · +2 🪙 for voting</span>}
             </p>
 
             {/* Option A */}
@@ -230,7 +230,7 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
             </button>
 
             <div style={{ textAlign: "center", margin: "4px 0 10px" }}>
-              <span style={{ fontSize: "13px", fontWeight: "700", color: "#8e8e8e", fontFamily: "Inter, sans-serif" }}>OR</span>
+              <span style={{ fontSize: "13px", fontWeight: "700", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>OR</span>
             </div>
 
             {/* Option B */}
@@ -269,16 +269,16 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
             </button>
 
             {myVote && (
-              <p style={{ textAlign: "center", fontSize: "13px", color: "#8e8e8e", marginBottom: "16px", fontFamily: "Inter, sans-serif" }}>
-                You chose <strong style={{ color: "#0f0f0f" }}>{myVote === "a" ? wyrQuestion.a : wyrQuestion.b}</strong>
+              <p style={{ textAlign: "center", fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px", fontFamily: "Inter, sans-serif" }}>
+                You chose <strong style={{ color: "var(--text)" }}>{myVote === "a" ? wyrQuestion.a : wyrQuestion.b}</strong>
               </p>
             )}
 
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={newWYR} style={{ flex: 1, padding: "12px", background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+              <button onClick={newWYR} style={{ flex: 1, padding: "12px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                 🔀 New Question
               </button>
-              <button onClick={endGame} style={{ flex: 1, padding: "12px", background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+              <button onClick={endGame} style={{ flex: 1, padding: "12px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                 🏠 Menu
               </button>
             </div>
@@ -290,15 +290,15 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
               <h3 style={{ fontSize: "17px", fontWeight: "700", margin: 0, fontFamily: "Inter, sans-serif" }}>🧠 Trivia</h3>
-              <button onClick={endGame} style={{ background: "none", border: "none", color: "#8e8e8e", fontSize: "20px", cursor: "pointer" }}>✕</button>
+              <button onClick={endGame} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "20px", cursor: "pointer" }}>✕</button>
             </div>
 
-            <div style={{ padding: "16px", borderRadius: "14px", background: "#fafafa", border: "1px solid #e8e8e8", marginBottom: "16px", textAlign: "center" }}>
-              <p style={{ fontSize: "15px", fontWeight: "700", color: "#0f0f0f", lineHeight: "1.5", margin: 0, fontFamily: "Inter, sans-serif" }}>
+            <div style={{ padding: "16px", borderRadius: "14px", background: "var(--card)", border: "1px solid var(--border)", marginBottom: "16px", textAlign: "center" }}>
+              <p style={{ fontSize: "15px", fontWeight: "700", color: "var(--text)", lineHeight: "1.5", margin: 0, fontFamily: "Inter, sans-serif" }}>
                 {triviaQuestion.q}
               </p>
               {triviaAnswers[me] === undefined && !triviaRevealed && (
-                <p style={{ fontSize: "12px", color: "#8e8e8e", margin: "8px 0 0", fontFamily: "Inter, sans-serif" }}>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "8px 0 0", fontFamily: "Inter, sans-serif" }}>
                   +3 🪙 for playing · +10 🪙 if correct
                 </p>
               )}
@@ -344,7 +344,7 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
             </div>
 
             <div style={{ marginBottom: "16px" }}>
-              <p style={{ fontSize: "12px", color: "#8e8e8e", margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>
                 {Object.keys(triviaAnswers).length}/{members.length} answered
               </p>
               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
@@ -356,7 +356,7 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
                       background: answered ? "#f0f0f0" : "#fafafa",
                       color: answered ? "#0f0f0f" : "#8e8e8e",
                       fontWeight: answered ? "600" : "400",
-                      border: "1px solid #e8e8e8", fontFamily: "Inter, sans-serif"
+                      border: "1px solid var(--border)", fontFamily: "Inter, sans-serif"
                     }}>
                       {answered ? "✓" : "⏳"} {m.username}
                     </span>
@@ -378,15 +378,15 @@ export default function MiniGame({ groupId, groupName, members, onClose }) {
 
             <div style={{ display: "flex", gap: "8px" }}>
               {!triviaRevealed ? (
-                <button onClick={revealTrivia} style={{ flex: 2, padding: "12px", background: "#0f0f0f", color: "white", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                <button onClick={revealTrivia} style={{ flex: 2, padding: "12px", background: "var(--purple-dark)", color: "var(--bg)", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                   👁️ Reveal Answer
                 </button>
               ) : (
-                <button onClick={newTrivia} style={{ flex: 2, padding: "12px", background: "#0f0f0f", color: "white", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                <button onClick={newTrivia} style={{ flex: 2, padding: "12px", background: "var(--purple-dark)", color: "var(--bg)", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                   🔀 Next Question
                 </button>
               )}
-              <button onClick={endGame} style={{ flex: 1, padding: "12px", background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+              <button onClick={endGame} style={{ flex: 1, padding: "12px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                 🏠 Menu
               </button>
             </div>

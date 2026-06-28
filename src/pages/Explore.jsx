@@ -120,13 +120,13 @@ export default function Explore() {
           </button>
         </div>
         <div style={{ position: "relative" }}>
-          <svg style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#8e8e8e" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input className="search-input" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search interests or groups..." />
         </div>
       </div>
 
       {showCreate && (
-        <div style={{ padding: "16px", borderBottom: "1px solid var(--border)", background: "#fafafa", animation: "fadeUp 0.2s ease" }}>
+        <div style={{ padding: "16px", borderBottom: "1px solid var(--border)", background: "var(--card)", animation: "fadeUp 0.2s ease" }}>
           <p style={{ fontWeight: "700", fontSize: "15px", marginBottom: "12px", fontFamily: "Inter, sans-serif" }}>New Interest Group</p>
           <div style={{ marginBottom: "12px" }}>
             <label className="input-label">Group Name</label>
@@ -152,7 +152,7 @@ export default function Explore() {
         <div style={{
           margin: "12px 16px",
           padding: "14px 16px",
-          background: "#fafafa",
+          background: "var(--card)",
           borderRadius: "12px",
           border: "1px solid var(--border)",
           display: "flex", alignItems: "center", justifyContent: "space-between"
@@ -161,7 +161,7 @@ export default function Explore() {
             <p style={{ fontWeight: "700", fontSize: "14px", margin: "0 0 2px", fontFamily: "Inter, sans-serif" }}>
               🎲 Random Match
             </p>
-            <p style={{ fontSize: "12px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
               Get matched based on your interests
             </p>
           </div>
@@ -169,7 +169,7 @@ export default function Explore() {
             onClick={handleRandomMatch}
             disabled={joining || userGroups.length >= (userProfile?.maxGroups || 5)}
             style={{
-              background: "#0f0f0f", color: "white", border: "none",
+              background: "var(--purple-dark)", color: "var(--bg)", border: "none",
               borderRadius: "8px", padding: "8px 16px",
               fontSize: "13px", fontWeight: "600", cursor: joining ? "default" : "pointer",
               fontFamily: "Inter, sans-serif", opacity: userGroups.length >= (userProfile?.maxGroups || 5) ? 0.4 : 1
@@ -270,7 +270,7 @@ function GroupRow({ group, isMember, onJoin, onOpen, last, highlight }) {
           <p style={{ fontWeight: "600", fontSize: "15px", margin: "0 0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {group.name}
           </p>
-          <p style={{ fontSize: "13px", color: "#8e8e8e", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {group.sharedInterests?.join(", ")} · {group.members?.length || 0}/6 members
           </p>
         </div>

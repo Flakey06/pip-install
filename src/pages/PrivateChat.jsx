@@ -71,20 +71,20 @@ function PrivateChat() {
 
   return (
     <div style={{
-      height: "100vh", background: "white",
+      height: "100vh", background: "var(--bg)",
       display: "flex", flexDirection: "column",
       maxWidth: "480px", margin: "0 auto", overflow: "hidden"
     }}>
 
 
       <div style={{
-        padding: "14px 16px", borderBottom: "1px solid #f0f0f0",
+        padding: "14px 16px", borderBottom: "1px solid var(--border)",
         display: "flex", alignItems: "center", gap: "12px",
-        background: "white", flexShrink: 0
+        background: "var(--bg)", flexShrink: 0
       }}>
         <button onClick={() => navigate("/friends")} style={{
           background: "none", border: "none", fontSize: "22px",
-          cursor: "pointer", color: "#1a1a1a", flexShrink: 0
+          cursor: "pointer", color: "var(--text)", flexShrink: 0
         }}>←</button>
         {friend && (
           <>
@@ -93,7 +93,7 @@ function PrivateChat() {
               objectFit: "cover", border: "2px solid #4F46E5"
             }} />
             <div>
-              <h3 style={{ margin: 0, fontSize: "16px", color: "#1a1a1a" }}>{friend.username}</h3>
+              <h3 style={{ margin: 0, fontSize: "16px", color: "var(--text)" }}>{friend.username}</h3>
               <p style={{ margin: 0, fontSize: "12px", color: "#4F46E5" }}>{friend.telegram}</p>
             </div>
           </>
@@ -141,9 +141,9 @@ function PrivateChat() {
 
 
       <div style={{
-        padding: "12px 16px", borderTop: "1px solid #f0f0f0",
+        padding: "12px 16px", borderTop: "1px solid var(--border)",
         display: "flex", gap: "10px", alignItems: "flex-end",
-        background: "white", flexShrink: 0
+        background: "var(--bg)", flexShrink: 0
       }}>
         <textarea
           value={newMessage}
@@ -155,13 +155,13 @@ function PrivateChat() {
             flex: 1, padding: "10px 14px", borderRadius: "20px",
             border: "1.5px solid #e0e0e0", fontSize: "14px",
             outline: "none", resize: "none", lineHeight: "1.5",
-            fontFamily: "inherit", color: "#1a1a1a", maxHeight: "120px"
+            fontFamily: "inherit", color: "var(--text)", maxHeight: "120px"
           }}
         />
         <button onClick={sendMessage} disabled={!newMessage.trim()} style={{
           width: "42px", height: "42px", borderRadius: "50%",
           background: newMessage.trim() ? "#4F46E5" : "#e0e0e0",
-          color: "white", border: "none", fontSize: "16px",
+          color: "var(--bg)", border: "none", fontSize: "16px",
           cursor: newMessage.trim() ? "pointer" : "default",
           display: "flex", alignItems: "center", justifyContent: "center",
           flexShrink: 0

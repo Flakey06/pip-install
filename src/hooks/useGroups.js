@@ -783,8 +783,9 @@ export async function joinRandomGroup(userProfile) {
 
 
 
-export async function leaveGroup(groupId) {
-  const uid = auth.currentUser.uid;
+
+  export async function leaveGroup(groupId) {
+    const uid = auth.currentUser.uid;
 
 <<<<<<< HEAD
   await updateDoc(doc(db, "groups", groupId), {
@@ -800,27 +801,41 @@ export async function leaveGroup(groupId) {
   const groupRef = doc(db, "groups", groupId);
   const userRef = doc(db, "users", uid);
 
-  const groupSnap = await getDoc(groupRef);
-  if (!groupSnap.exists()) {
-    await updateDoc(userRef, {
-      groups: arrayRemove(groupId)
-    });
+    // Transfer admin rights if this user is admin
+    const groupSnap = await getDoc(doc(db, "groups", groupId));
+    if (groupSnap.exists()) {
+      const data = groupSnap.data();
+      if (data.adminId === uid) {
+        const nextAdmin = (data.members || []).find(m => m !== uid);
+        if (nextAdmin) {
+          await updateDoc(doc(db, "groups", groupId), { adminId: nextAdmin });
+        }
+      }
+    }
 
-    return { success: true, deleted: false, reason: "group_missing" };
-  }
+    // Automatic deletion if last member leaves group
 
-  const groupData = groupSnap.data();
-  const remainingMembers = (groupData.members || []).filter(id => id !== uid);
+    const groupSnap2 = await getDoc(groupRef);
+    if (!groupSnap2.exists()) {
+      await updateDoc(userRef, {
+        groups: arrayRemove(groupId)
+      });
 
-  if (remainingMembers.length === 0) {
-    await deleteDoc(groupRef);
+      return { success: true, deleted: false, reason: "group_missing" };
+    }
 
-    await updateDoc(userRef, {
-      groups: arrayRemove(groupId)
-    });
+    const groupData = groupSnap2.data();
+    const remainingMembers = (groupData.members || []).filter(id => id !== uid);
 
-    return { success: true, deleted: true };
-  }
+    if (remainingMembers.length === 0) {
+      await deleteDoc(groupRef);
+
+      await updateDoc(userRef, {
+        groups: arrayRemove(groupId)
+      });
+
+      return { success: true, deleted: true };
+    }
 
   await updateDoc(groupRef, {
     members: arrayRemove(uid),

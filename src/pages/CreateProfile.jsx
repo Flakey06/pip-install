@@ -3,7 +3,12 @@ import { useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+<<<<<<< HEAD
 import { useInterests } from "../hooks/useInterests";
+=======
+import { useInterests, saveInterestsToDatabases } from "../hooks/useInterests";
+import InterestSelector from "../components/InterestSelector";
+>>>>>>> 7aa8384e (Implementation and Integration)
 import AvatarPicker from "../components/AvatarPicker";
 
 const STEPS = 6;
@@ -25,10 +30,42 @@ export default function CreateProfile() {
 
   const defaultAvatar = `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(username || auth.currentUser?.uid || "user")}`;
 
+<<<<<<< HEAD
   const canNext = () => {
     if (step === 1 && !username.trim()) return false;
     if (step === 2 && (!major.trim() || !year)) return false;
     return true;
+=======
+  const handleSubmit = async () => {
+    if (!username || !major || !year) {
+      alert("Please fill in all required fields!");
+      return;
+    }
+    setSaving(true);
+    const user = auth.currentUser;
+
+    const finalAvatar = avatarUrl ||
+      user.photoURL ||
+      `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(username)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+    const savedInterests = await saveInterestsToDatabases(interests);
+
+    if (!savedInterests.success) {
+      alert(`Could not save interest: ${savedInterests.failedInterest.reason}`);
+      setSaving(false);
+      return;
+    }
+
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      email: user.email,
+      photoURL: finalAvatar,
+      username, major, year, bio, telegram,
+      interests: savedInterests.interests,
+      groups: [],
+      createdAt: new Date()
+    });
+    navigate("/home");
+>>>>>>> 7aa8384e (Implementation and Integration)
   };
 
   const handleNext = () => {

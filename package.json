@@ -10,11 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@emailjs/browser": "^4.4.1",
+=======
+    "@tensorflow/tfjs": "^4.22.0",
+>>>>>>> 7aa8384e (Implementation and Integration)
     "firebase": "^12.14.0",
+    "firebase-admin": "^14.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-router-dom": "^7.15.1"
+    "react-router-dom": "^7.15.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

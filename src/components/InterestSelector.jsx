@@ -1,15 +1,26 @@
 // file purpose: Searchable interest dropdown, add custom interests to Firestore
 
 import { useState, useRef, useEffect } from "react";
-import { normalise } from "../hooks/useInterests";
+import { normalise, uniqueInterests } from "../hooks/useInterests";
 
-function InterestSelector({ interests, setInterests, allInterests, addToMaster }) {
+function InterestSelector({
+  interests,
+  setInterests,
+  allInterests,
+  addToMaster,
+  allowCustom = true,
+  label = "Interests",
+  emptyText = "No interests selected yet - search below or press + to add your own!",
+  placeholder = "Search interests...",
+}) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const wrapperRef = useRef(null);
+  const selectedInterests = uniqueInterests(interests);
+  const availableInterests = uniqueInterests(allInterests);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -26,16 +37,16 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
     setShowDropdown(true);
     if (val.trim() === "") { setSuggestions([]); return; }
     const norm = normalise(val);
-    const filtered = allInterests.filter(i =>
-      i.includes(norm) && !interests.includes(i)
+    const filtered = availableInterests.filter(i =>
+      i.includes(norm) && !selectedInterests.includes(i)
     );
     setSuggestions(filtered);
   };
 
   const selectInterest = (val) => {
     const norm = normalise(val);
-    if (norm && !interests.includes(norm)) {
-      setInterests(prev => [...prev, norm]);
+    if (norm && !selectedInterests.includes(norm)) {
+      setInterests(prev => uniqueInterests([...prev, norm]));
     }
     setInput("");
     setSuggestions([]);
@@ -43,25 +54,29 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
   };
 
   const removeInterest = (interest) => {
-    setInterests(prev => prev.filter(i => i !== interest));
+    const norm = normalise(interest);
+    setInterests(prev => uniqueInterests(prev).filter(i => i !== norm));
   };
 
   const handleAddCustom = async () => {
+    if (!allowCustom || !addToMaster) return;
+
     const norm = normalise(customInput);
     if (!norm) return;
-    if (interests.includes(norm)) {
+    if (selectedInterests.includes(norm)) {
       alert("You already added this interest!");
       return;
     }
-    await addToMaster(norm);
-    setInterests(prev => [...prev, norm]);
+    setInterests(prev => uniqueInterests([...prev, norm]));
     setCustomInput("");
     setShowAddModal(false);
+    await addToMaster(norm);
   };
 
   return (
     <div style={{ marginBottom: "28px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+<<<<<<< HEAD
         <label style={{ color: "var(--text)", fontSize: "14px", fontWeight: "bold" }}>
           Interests
         </label>
@@ -83,18 +98,43 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
         >
           +
         </button>
+=======
+        <label style={{ color: "#1a1a1a", fontSize: "14px", fontWeight: "bold" }}>
+          {label}
+        </label>
+        {allowCustom && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            style={{
+              width: "28px", height: "28px",
+              borderRadius: "50%",
+              background: "#4F46E5",
+              color: "white",
+              border: "none",
+              fontSize: "20px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              lineHeight: 1
+            }}
+          >
+            +
+          </button>
+        )}
+>>>>>>> 7aa8384e (Implementation and Integration)
       </div>
 
       <div style={{
         display: "flex", flexWrap: "wrap", gap: "8px",
         marginBottom: "12px", minHeight: "10px"
       }}>
-        {interests.length === 0 && (
+        {selectedInterests.length === 0 && (
           <p style={{ color: "#aaa", fontSize: "13px", margin: 0 }}>
-            No interests selected yet — search below or press + to add your own!
+            {emptyText}
           </p>
         )}
-        {interests.map(interest => (
+        {selectedInterests.map(interest => (
           <span key={interest} style={{
             padding: "6px 12px",
             borderRadius: "20px",
@@ -107,11 +147,29 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
             gap: "6px"
           }}>
             {interest}
-            <span
+            <button
+              type="button"
+              aria-label={`Remove ${interest}`}
               onClick={() => removeInterest(interest)}
-              style={{ cursor: "pointer", fontSize: "16px", lineHeight: 1 }}
+              style={{
+                width: "18px",
+                height: "18px",
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.22)",
+                color: "white",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: "700",
+                lineHeight: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0
+              }}
             >
-            </span>
+              x
+            </button>
           </span>
         ))}
       </div>
@@ -128,7 +186,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
             if (e.key === "Escape") setShowDropdown(false);
           }}
           onFocus={() => input && setShowDropdown(true)}
-          placeholder="Search interests..."
+          placeholder={placeholder}
           style={{
             width: "100%", padding: "12px",
             borderRadius: "10px",
@@ -164,7 +222,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
           </div>
         )}
 
-        {showDropdown && input && suggestions.length === 0 && (
+        {showDropdown && input && suggestions.length === 0 && allowCustom && (
           <div style={{
             position: "absolute", top: "100%", left: 0, right: 0,
             border: "1.5px solid #e0e0e0", borderRadius: "10px",
@@ -180,7 +238,7 @@ function InterestSelector({ interests, setInterests, allInterests, addToMaster }
         "AI", "ai", "A I" are all treated the same ~
       </p>
 
-      {showAddModal && (
+      {showAddModal && allowCustom && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
           background: "rgba(0,0,0,0.4)", zIndex: 200,

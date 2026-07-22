@@ -16,9 +16,13 @@ import GroupCalendar from "./pages/GroupCalendar";
 import Calendar from "./pages/Calendar";
 import GroupInfo from "./pages/GroupInfo";
 import Credits from "./pages/Credits";
+<<<<<<< HEAD
 import NUSVerify from "./pages/NUSVerify";
 import NUSVerifyComplete from "./pages/NUSVerifyComplete";
 import OpenInvite from "./pages/OpenInvite";
+=======
+import Matchmaking from "./pages/Matchmaking";
+>>>>>>> 7aa8384e (Implementation and Integration)
 
 function ProtectedRoute({ children }) {
   if (!auth.currentUser) return <Navigate to="/" replace />;
@@ -40,7 +44,11 @@ function App() {
         <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
         <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
         <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+<<<<<<< HEAD
         <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+=======
+        <Route path="/matchmaking" element={<ProtectedRoute><Matchmaking /></ProtectedRoute>} />
+>>>>>>> 7aa8384e (Implementation and Integration)
         <Route path="/private-chat/:friendId" element={<ProtectedRoute><PrivateChat /></ProtectedRoute>} />
         <Route path="/calendar/:groupId" element={<ProtectedRoute><GroupCalendar /></ProtectedRoute>} />
         <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />

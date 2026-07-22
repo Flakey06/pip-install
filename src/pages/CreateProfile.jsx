@@ -3,7 +3,7 @@ import { useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { useInterests } from "../hooks/useInterests";
+import { useInterests, saveInterestsToDatabases } from "../hooks/useInterests";
 import InterestSelector from "../components/InterestSelector";
 import AvatarPicker from "../components/AvatarPicker";
 
@@ -32,12 +32,20 @@ export default function CreateProfile() {
     const finalAvatar = avatarUrl ||
       user.photoURL ||
       `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(username)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+    const savedInterests = await saveInterestsToDatabases(interests);
+
+    if (!savedInterests.success) {
+      alert(`Could not save interest: ${savedInterests.failedInterest.reason}`);
+      setSaving(false);
+      return;
+    }
 
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       email: user.email,
       photoURL: finalAvatar,
-      username, major, year, bio, telegram, interests,
+      username, major, year, bio, telegram,
+      interests: savedInterests.interests,
       groups: [],
       createdAt: new Date()
     });

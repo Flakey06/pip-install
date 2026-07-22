@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { collection, getDocs, addDoc, doc, updateDoc, arrayUnion, getDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { joinRandomGroup } from "../hooks/useGroups";
 import TabBar from "../components/TabBar";
 
 export default function Explore() {
@@ -17,7 +16,6 @@ export default function Explore() {
   const [newName, setNewName] = useState("");
   const [newTopics, setNewTopics] = useState("");
   const [creating, setCreating] = useState(false);
-  const [joining, setJoining] = useState(false);
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState("foryou");  
   const navigate = useNavigate();
@@ -55,25 +53,6 @@ export default function Explore() {
     setUserGroups(p => [...p, group.id]);
     setMessage("Joined!");
     setTimeout(() => navigate(`/chat/${group.id}`), 500);
-  };
-
-  const handleRandomMatch = async () => {
-    if (!userProfile) return;
-    if (userGroups.length >= (userProfile?.maxGroups || 5)) { setMessage(`❌ You're in ${userProfile?.maxGroups || 5} groups — leave one first!`); return; }
-    setJoining(true); setMessage("");
-    const result = await joinRandomGroup(userProfile);
-    if (result.success) {
-      if (result.waitingForMembers) {
-        setMessage("Group created! Waiting for others with similar interests...");
-        await fetchAll();
-      } else {
-        setMessage("Matched into a group!");
-        setTimeout(() => navigate(`/chat/${result.groupId}`), 500);
-      }
-    } else {
-      setMessage("Could not find a match right now. Try creating a group!");
-    }
-    setJoining(false);
   };
 
   const handleCreate = async () => {
@@ -159,23 +138,22 @@ export default function Explore() {
         }}>
           <div>
             <p style={{ fontWeight: "700", fontSize: "14px", margin: "0 0 2px", fontFamily: "Inter, sans-serif" }}>
-              🎲 Random Match
+              🎲 Matchmaking
             </p>
             <p style={{ fontSize: "12px", color: "#8e8e8e", margin: 0, fontFamily: "Inter, sans-serif" }}>
-              Get matched based on your interests
+              Choose how you want to find your next group
             </p>
           </div>
           <button
-            onClick={handleRandomMatch}
-            disabled={joining || userGroups.length >= (userProfile?.maxGroups || 5)}
+            onClick={() => navigate("/matchmaking")}
             style={{
               background: "#0f0f0f", color: "white", border: "none",
               borderRadius: "8px", padding: "8px 16px",
-              fontSize: "13px", fontWeight: "600", cursor: joining ? "default" : "pointer",
-              fontFamily: "Inter, sans-serif", opacity: userGroups.length >= (userProfile?.maxGroups || 5) ? 0.4 : 1
+              fontSize: "13px", fontWeight: "600", cursor: "pointer",
+              fontFamily: "Inter, sans-serif", flexShrink: 0
             }}
           >
-            {joining ? "Matching..." : "Match me"}
+            Open
           </button>
         </div>
       )}

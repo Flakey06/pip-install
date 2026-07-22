@@ -15,6 +15,7 @@ import GroupCalendar from "./pages/GroupCalendar";
 import Calendar from "./pages/Calendar";
 import GroupInfo from "./pages/GroupInfo";
 import Credits from "./pages/Credits";
+import Matchmaking from "./pages/Matchmaking";
 
 function ProtectedRoute({ children }) {
   if (!auth.currentUser) return <Navigate to="/" replace />;
@@ -36,6 +37,7 @@ function App() {
         <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
         <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
         <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+        <Route path="/matchmaking" element={<ProtectedRoute><Matchmaking /></ProtectedRoute>} />
         <Route path="/private-chat/:friendId" element={<ProtectedRoute><PrivateChat /></ProtectedRoute>} />
         <Route path="/calendar/:groupId" element={<ProtectedRoute><GroupCalendar /></ProtectedRoute>} />
         <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />

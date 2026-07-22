@@ -735,44 +735,52 @@ export async function joinRandomGroup(userProfile) {
 
 
 
-export async function leaveGroup(groupId) {
-  const uid = auth.currentUser.uid;
 
-  const groupRef = doc(db, "groups", groupId);
-  const userRef = doc(db, "users", uid);
+  export async function leaveGroup(groupId) {
+    const uid = auth.currentUser.uid;
 
-  const groupSnap = await getDoc(groupRef);
-  if (!groupSnap.exists()) {
-    await updateDoc(userRef, {
-      groups: arrayRemove(groupId)
-    });
+    const groupRef = doc(db, "groups", groupId);
+    const userRef = doc(db, "users", uid);
 
-    return { success: true, deleted: false, reason: "group_missing" };
+    // Transfer admin rights if this user is admin
+    const groupSnap = await getDoc(doc(db, "groups", groupId));
+    if (groupSnap.exists()) {
+      const data = groupSnap.data();
+      if (data.adminId === uid) {
+        const nextAdmin = (data.members || []).find(m => m !== uid);
+        if (nextAdmin) {
+          await updateDoc(doc(db, "groups", groupId), { adminId: nextAdmin });
+        }
+      }
+    }
+
+    // Automatic deletion if last member leaves group
+
+    const groupSnap2 = await getDoc(groupRef);
+    if (!groupSnap2.exists()) {
+      await updateDoc(userRef, {
+        groups: arrayRemove(groupId)
+      });
+
+      return { success: true, deleted: false, reason: "group_missing" };
+    }
+
+    const groupData = groupSnap2.data();
+    const remainingMembers = (groupData.members || []).filter(id => id !== uid);
+
+    if (remainingMembers.length === 0) {
+      await deleteDoc(groupRef);
+
+      await updateDoc(userRef, {
+        groups: arrayRemove(groupId)
+      });
+
+      return { success: true, deleted: true };
+    }
+
+    await updateDoc(doc(db, "groups", groupId), { members: arrayRemove(uid) });
+    await updateDoc(doc(db, "users", uid), { groups: arrayRemove(groupId) });
+    return { success: true };
   }
-
-  const groupData = groupSnap.data();
-  const remainingMembers = (groupData.members || []).filter(id => id !== uid);
-
-  if (remainingMembers.length === 0) {
-    await deleteDoc(groupRef);
-
-    await updateDoc(userRef, {
-      groups: arrayRemove(groupId)
-    });
-
-    return { success: true, deleted: true };
-  }
-
-  await updateDoc(groupRef, {
-    members: arrayRemove(uid),
-    memberCount: remainingMembers.length
-  });
-
-  await updateDoc(userRef, {
-    groups: arrayRemove(groupId)
-  });
-
-  return { success: true, deleted: false };
-}
 
 export { MIN_MEMBERS_FOR_CHAT };

@@ -1,4 +1,4 @@
-//file use: entry point, applies theme, waits for firebase auth state
+// file use: entry point, applies theme, waits for firebase auth state
 import { StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
@@ -13,8 +13,11 @@ function Root() {
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, () => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setAuthReady(true);
+      if (user && "Notification" in window) {
+        Notification.requestPermission().catch(console.error);
+      }
     });
     return () => unsubscribe();
   }, []);

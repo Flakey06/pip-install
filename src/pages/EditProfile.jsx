@@ -83,7 +83,7 @@ export default function EditProfile() {
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px 0 20px" }}>
         <img
-          src={avatarUrl || auth.currentUser?.photoURL}
+          src={avatarUrl || auth.currentUser?.photoURL || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(username)}`}
           alt="avatar"
           className="avatar"
           style={{ width: "90px", height: "90px", marginBottom: "10px", cursor: "pointer" }}

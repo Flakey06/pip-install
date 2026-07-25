@@ -1,30 +1,29 @@
-// file use: Avatar modal, upload photo (Base64) or build cartoon SVG
-
+// code use: avatar modal — upload photo (Base64) or build cartoon SVG
 import { useState, useRef } from "react";
 import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";
 
-const SKIN_TONES = ["#FDDBB4", "#F5CBA7", "#E59866", "#CA9E67", "#8D5524", "#4A2912"];
-const HAIR_COLORS = ["#1a1a1a", "#4a3728", "#8B4513", "#DAA520", "#FF6B6B", "#9B59B6", "#FFFFFF"];
-const HAIR_STYLES = ["short", "long", "curly", "bun", "none"];
-const EYE_COLORS = ["#1a1a1a", "#4169E1", "#228B22", "#8B4513", "#708090"];
-const MOUTH_STYLES = ["smile", "grin", "neutral", "smirk"];
+const SKIN_TONES  = ["#FDDBB4","#F5CBA7","#E59866","#CA9E67","#8D5524","#4A2912"];
+const HAIR_COLORS = ["#1a1a1a","#4a3728","#8B4513","#DAA520","#FF6B6B","#9B59B6","#FFFFFF"];
+const HAIR_STYLES = ["short","long","curly","bun","none"];
+const EYE_COLORS  = ["#1a1a1a","#4169E1","#228B22","#8B4513","#708090"];
+const MOUTH_STYLES= ["smile","grin","neutral","smirk"];
 
 function CartoonAvatar({ options, size = 80 }) {
   const { skin, hair, hairStyle, eyes, mouth } = options;
-  const s = size; const cx = s / 2;
+  const s = size, cx = s / 2;
   const hairPaths = {
-    short: `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} Q${cx+s*.3} ${s*.22} ${cx} ${s*.18} Q${cx-s*.3} ${s*.22} ${cx-s*.28} ${s*.38}Z`,
-    long: `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} L${cx+s*.32} ${s*.75} Q${cx+s*.28} ${s*.8} ${cx+s*.22} ${s*.7} L${cx-s*.22} ${s*.7} Q${cx-s*.28} ${s*.8} ${cx-s*.32} ${s*.75}Z`,
-    curly: `M${cx-s*.28} ${s*.38} Q${cx-s*.35} ${s*.1} ${cx} ${s*.12} Q${cx+s*.35} ${s*.1} ${cx+s*.28} ${s*.38} Q${cx+s*.38} ${s*.2} ${cx+s*.15} ${s*.15} Q${cx} ${s*.08} ${cx-s*.15} ${s*.15} Q${cx-s*.38} ${s*.2} ${cx-s*.28} ${s*.38}Z`,
-    bun: `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} Q${cx+s*.3} ${s*.22} ${cx} ${s*.18} Q${cx-s*.3} ${s*.22} ${cx-s*.28} ${s*.38}Z M${cx-s*.1} ${s*.15} Q${cx} ${s*.02} ${cx+s*.1} ${s*.15} Q${cx} ${s*.22} ${cx-s*.1} ${s*.15}Z`,
-    none: ""
+    short:  `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} Q${cx+s*.3} ${s*.22} ${cx} ${s*.18} Q${cx-s*.3} ${s*.22} ${cx-s*.28} ${s*.38}Z`,
+    long:   `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} L${cx+s*.32} ${s*.75} Q${cx+s*.28} ${s*.8} ${cx+s*.22} ${s*.7} L${cx-s*.22} ${s*.7} Q${cx-s*.28} ${s*.8} ${cx-s*.32} ${s*.75}Z`,
+    curly:  `M${cx-s*.28} ${s*.38} Q${cx-s*.35} ${s*.1} ${cx} ${s*.12} Q${cx+s*.35} ${s*.1} ${cx+s*.28} ${s*.38} Q${cx+s*.38} ${s*.2} ${cx+s*.15} ${s*.15} Q${cx} ${s*.08} ${cx-s*.15} ${s*.15} Q${cx-s*.38} ${s*.2} ${cx-s*.28} ${s*.38}Z`,
+    bun:    `M${cx-s*.28} ${s*.38} Q${cx} ${s*.05} ${cx+s*.28} ${s*.38} Q${cx+s*.3} ${s*.22} ${cx} ${s*.18} Q${cx-s*.3} ${s*.22} ${cx-s*.28} ${s*.38}Z M${cx-s*.1} ${s*.15} Q${cx} ${s*.02} ${cx+s*.1} ${s*.15} Q${cx} ${s*.22} ${cx-s*.1} ${s*.15}Z`,
+    none:   ""
   };
   const mouthPaths = {
-    smile: `M${cx-s*.12} ${s*.62} Q${cx} ${s*.72} ${cx+s*.12} ${s*.62}`,
-    grin: `M${cx-s*.14} ${s*.61} Q${cx} ${s*.74} ${cx+s*.14} ${s*.61} L${cx+s*.14} ${s*.64} Q${cx} ${s*.76} ${cx-s*.14} ${s*.64}Z`,
+    smile:   `M${cx-s*.12} ${s*.62} Q${cx} ${s*.72} ${cx+s*.12} ${s*.62}`,
+    grin:    `M${cx-s*.14} ${s*.61} Q${cx} ${s*.74} ${cx+s*.14} ${s*.61} L${cx+s*.14} ${s*.64} Q${cx} ${s*.76} ${cx-s*.14} ${s*.64}Z`,
     neutral: `M${cx-s*.1} ${s*.65} L${cx+s*.1} ${s*.65}`,
-    smirk: `M${cx-s*.08} ${s*.65} Q${cx+s*.06} ${s*.6} ${cx+s*.12} ${s*.63}`
+    smirk:   `M${cx-s*.08} ${s*.65} Q${cx+s*.06} ${s*.6} ${cx+s*.12} ${s*.63}`
   };
   return (
     <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
@@ -65,7 +64,13 @@ function resizeToBase64(file, maxPx = 200) {
 async function saveBase64ToFirestore(base64) {
   const user = auth.currentUser;
   if (!user) throw new Error("Not logged in");
-  await updateDoc(doc(db, "users", user.uid), { photoURL: base64 });
+  // Only update if user doc exists (during create profile it gets saved later)
+  try {
+    await updateDoc(doc(db, "users", user.uid), { photoURL: base64 });
+  } catch (e) {
+    // Doc doesn't exist yet (new user) — that's fine, CreateProfile saves it
+    console.log("User doc not yet created, avatar will be saved on profile submit");
+  }
   return base64;
 }
 
@@ -77,6 +82,11 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
     skin: "#FDDBB4", hair: "#4a3728", hairStyle: "short", eyes: "#1a1a1a", mouth: "smile"
   });
   const fileRef = useRef(null);
+
+  // Safe preview — never use empty string as img src
+  const previewSrc = currentPhoto && currentPhoto.length > 10
+    ? currentPhoto
+    : `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${auth.currentUser?.uid || "user"}`;
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
@@ -123,8 +133,9 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
     <div onClick={onClick} style={{
       width: "28px", height: "28px", borderRadius: "50%", background: color,
       cursor: "pointer", flexShrink: 0,
-      border: selected ? "3px solid #0f0f0f" : "2px solid #dbdbdb",
-      boxSizing: "border-box"
+      border: selected ? "3px solid var(--purple-dark)" : "2px solid var(--border)",
+      boxSizing: "border-box", transition: "transform 0.1s ease",
+      transform: selected ? "scale(1.15)" : "scale(1)"
     }} />
   );
 
@@ -132,10 +143,10 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
     <button onClick={onClick} style={{
       padding: "5px 12px", borderRadius: "20px", cursor: "pointer",
       fontSize: "12px", fontWeight: "600",
-      background: selected ? "#0f0f0f" : "white",
-      color: selected ? "white" : "#0f0f0f",
-      border: "1px solid var(--border)",
-      fontFamily: "Inter, sans-serif"
+      background: selected ? "var(--purple-dark)" : "var(--card)",
+      color: selected ? "var(--bg)" : "var(--text)",
+      border: `1px solid var(--border)`,
+      fontFamily: "Inter, sans-serif", transition: "all 0.15s"
     }}>
       {label}
     </button>
@@ -148,44 +159,53 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
       display: "flex", alignItems: "flex-end", justifyContent: "center"
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "var(--bg)", borderRadius: "16px 16px 0 0",
+        background: "var(--bg)", borderRadius: "20px 20px 0 0",
         padding: "20px", width: "100%", maxWidth: "480px",
-        paddingBottom: "40px", maxHeight: "88vh", overflowY: "auto"
+        paddingBottom: "40px", maxHeight: "90vh", overflowY: "auto"
       }}>
-        <div style={{ width: "36px", height: "4px", background: "#dbdbdb", borderRadius: "2px", margin: "0 auto 16px" }} />
+        <div style={{ width: "36px", height: "4px", background: "var(--border)", borderRadius: "2px", margin: "0 auto 16px" }} />
+
         <h3 style={{ fontSize: "17px", fontWeight: "700", color: "var(--text)", marginBottom: "20px", textAlign: "center", fontFamily: "Inter, sans-serif" }}>
-          Change Profile Photo
+          Choose Avatar
         </h3>
 
         {error && (
-          <p style={{ color: "#ed4956", fontSize: "13px", textAlign: "center", marginBottom: "12px" }}>
+          <p style={{ color: "#ed4956", fontSize: "13px", textAlign: "center", marginBottom: "12px", fontFamily: "Inter, sans-serif" }}>
             ⚠️ {error}
           </p>
         )}
 
+        {/* Current photo preview */}
         {mode === "choose" && (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {[
-              { label: "Upload Photo", action: () => fileRef.current.click() },
-              { label: "Build Cartoon Avatar", action: () => setMode("cartoon") },
-            ].map((item, i) => (
-              <button key={item.label} onClick={item.action} style={{
-                padding: "16px", background: "var(--bg)", border: "none",
-                borderBottom: i === 0 ? "1px solid #dbdbdb" : "none",
-                fontSize: "15px", fontWeight: "600", cursor: "pointer",
-                color: "var(--text)", fontFamily: "Inter, sans-serif",
-                textAlign: "center"
-              }}>
-                {item.label}
-              </button>
-            ))}
+          <div style={{ textAlign: "center", marginBottom: "20px" }}>
+            <img src={previewSrc} alt="current avatar" style={{
+              width: "80px", height: "80px", borderRadius: "50%",
+              objectFit: "cover", border: `3px solid var(--purple-light)`
+            }} />
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px", fontFamily: "Inter, sans-serif" }}>
+              Current avatar
+            </p>
+          </div>
+        )}
+
+        {mode === "choose" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <button onClick={() => setMode("cartoon")} className="btn-primary">
+              🎨 Build Cartoon Avatar
+            </button>
+            <button onClick={() => fileRef.current.click()} className="btn-secondary">
+              📷 Upload Photo
+            </button>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleUpload} />
-            {uploading && <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "12px", fontSize: "13px" }}>Processing...</p>}
+            {uploading && (
+              <p style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "13px", fontFamily: "Inter, sans-serif" }}>
+                ⏳ Processing...
+              </p>
+            )}
             <button onClick={onClose} style={{
-              padding: "16px", background: "var(--bg)", border: "none",
-              borderTop: "8px solid #fafafa",
-              fontSize: "15px", cursor: "pointer", color: "#ed4956",
-              fontFamily: "Inter, sans-serif", fontWeight: "600", textAlign: "center"
+              background: "none", border: "none", color: "#ed4956",
+              fontSize: "14px", fontWeight: "600", cursor: "pointer",
+              fontFamily: "Inter, sans-serif", padding: "8px"
             }}>
               Cancel
             </button>
@@ -194,23 +214,26 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
 
         {mode === "cartoon" && (
           <div>
+            {/* Live preview */}
             <div id="cartoon-preview" style={{ textAlign: "center", marginBottom: "20px" }}>
               <div style={{
-                width: "96px", height: "96px", borderRadius: "50%",
+                width: "100px", height: "100px", borderRadius: "50%",
                 margin: "0 auto", overflow: "hidden",
-                border: "1px solid var(--border)"
+                border: `3px solid var(--purple-dark)`
               }}>
-                <CartoonAvatar options={options} size={96} />
+                <CartoonAvatar options={options} size={100} />
               </div>
-              <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "8px", fontFamily: "Inter, sans-serif" }}>Live preview</p>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "8px", fontFamily: "Inter, sans-serif" }}>
+                Live preview
+              </p>
             </div>
 
             {[
-              { label: "Skin tone", items: SKIN_TONES, key: "skin", type: "swatch" },
-              { label: "Hair style", items: HAIR_STYLES, key: "hairStyle", type: "btn" },
-              { label: "Hair color", items: HAIR_COLORS, key: "hair", type: "swatch" },
-              { label: "Eye color", items: EYE_COLORS, key: "eyes", type: "swatch" },
-              { label: "Mouth", items: MOUTH_STYLES, key: "mouth", type: "btn" },
+              { label: "Skin tone",  items: SKIN_TONES,   key: "skin",      type: "swatch" },
+              { label: "Hair style", items: HAIR_STYLES,  key: "hairStyle", type: "btn"    },
+              { label: "Hair color", items: HAIR_COLORS,  key: "hair",      type: "swatch" },
+              { label: "Eye color",  items: EYE_COLORS,   key: "eyes",      type: "swatch" },
+              { label: "Mouth",      items: MOUTH_STYLES, key: "mouth",     type: "btn"    },
             ].map(section => (
               <div key={section.key} style={{ marginBottom: "16px" }}>
                 <p style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "8px", fontFamily: "Inter, sans-serif" }}>
@@ -227,20 +250,11 @@ export default function AvatarPicker({ currentPhoto, onSave, onClose }) {
             ))}
 
             <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-              <button onClick={() => setMode("choose")} style={{
-                flex: 1, padding: "12px", background: "var(--card)",
-                border: "1px solid var(--border)", borderRadius: "10px",
-                fontSize: "14px", fontWeight: "600", cursor: "pointer",
-                fontFamily: "Inter, sans-serif"
-              }}>Back</button>
-              <button onClick={saveCartoon} disabled={uploading} style={{
-                flex: 1, padding: "12px", background: "var(--purple-dark)",
-                border: "none", borderRadius: "10px", color: "var(--bg)",
-                fontSize: "14px", fontWeight: "600", cursor: "pointer",
-                fontFamily: "Inter, sans-serif",
-                opacity: uploading ? 0.6 : 1
-              }}>
-                {uploading ? "Saving..." : "Save"}
+              <button onClick={() => setMode("choose")} className="btn-secondary" style={{ flex: 1 }}>
+                ← Back
+              </button>
+              <button onClick={saveCartoon} disabled={uploading} className="btn-primary" style={{ flex: 1 }}>
+                {uploading ? "Saving..." : "Save Avatar"}
               </button>
             </div>
           </div>

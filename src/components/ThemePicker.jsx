@@ -1,4 +1,4 @@
-// file: 8-colour theme selector, changes all CSS variables globally
+// file:8-colour theme selector, changes all CSS variables globally
 import { useTheme, THEMES } from "../hooks/useTheme";
 
 export default function ThemePicker({ onClose }) {

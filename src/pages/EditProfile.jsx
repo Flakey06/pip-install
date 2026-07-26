@@ -38,7 +38,8 @@ export default function EditProfile() {
     fetch();
   }, []);
 
-  const handleSave = async () => {
+  
+ /* const handleSave = async () => {
     if (!username) { alert("Username required!"); return; }
     setSaving(true);
     const interests = interestText.split(",").map(s => s.toLowerCase().trim()).filter(Boolean);
@@ -48,6 +49,68 @@ export default function EditProfile() {
     });
     navigate("/home");
   };
+*/
+
+  const handleSave = async () => {
+    try {
+      const user = auth.currentUser;
+
+      console.log("Current user:", user);
+      console.log("UID:", user?.uid);
+
+      if (!username) {
+        alert("Username required!");
+        return;
+      }
+
+      if (!user) {
+        alert("Not logged in!");
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+
+      const snap = await getDoc(userRef);
+
+      console.log("Document exists?", snap.exists());
+      console.log("Document data:", snap.data());
+
+      setSaving(true);
+
+      const interests = interestText
+        .split(",")
+        .map((s) => s.toLowerCase().trim())
+        .filter(Boolean);
+
+      await updateDoc(userRef, {
+        username,
+        major,
+        year,
+        bio,
+        telegram,
+        interests,
+        photoURL: avatarUrl,
+        updatedAt: new Date(),
+      });
+
+      console.log("Profile updated successfully");
+
+      navigate("/home");
+    } catch (err) {
+      console.error("Save failed:", err);
+      alert(err.message);
+      setSaving(false);
+    }
+  };
+
+
+
+
+
+
+
+
+
 
   const FIELDS = [
     { label: "Username", value: username, set: setUsername, placeholder: "Your username" },

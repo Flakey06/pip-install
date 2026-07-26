@@ -70,7 +70,7 @@ export const MOST_LIKELY_TO = [
 ];
 
 export const TWO_TRUTHS_PROMPTS = [
-  "Share 2 truths and 1 lie about your childhood",
+  "Share 2 truths and 1 lie about your yourself",
   "Share 2 truths and 1 lie about places you've been",
   "Share 2 truths and 1 lie about your skills",
   "Share 2 truths and 1 lie about your fears",

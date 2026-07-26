@@ -164,7 +164,6 @@ export default function MiniGame({ groupId, members, onClose }) {
     await set(ref(rtdb, `games/${groupId}/revealed`), true);
   };
 
-  // ── QUICK DRAW ──
   const startQuickDraw = async () => {
     const word = QUICK_DRAW_WORDS[Math.floor(Math.random() * QUICK_DRAW_WORDS.length)];
     const drawer = members[Math.floor(Math.random() * members.length)]?.uid;
@@ -257,7 +256,7 @@ export default function MiniGame({ groupId, members, onClose }) {
                 { icon: "🧠", title: "Trivia Quiz", desc: "Answer questions · +3🪙, +10🪙 correct", action: startTrivia },
                 { icon: "👆", title: "Most Likely To", desc: "Vote who in the group · +2 🪙", action: startMLT },
                 { icon: "🤥", title: "Two Truths One Lie", desc: "Find the lie · +10🪙 correct", action: startTTL },
-                { icon: "✏️", title: "Quick Draw", desc: "Guess the word · +10🪙 first guess", action: startQuickDraw },
+                { icon: "✏️", title: "Guess The Word", desc: "Guess the word · +10🪙 first guess", action: startQuickDraw },
               ].map(item => (
                 <button key={item.title} onClick={item.action} style={menuBtnStyle}
                   onMouseEnter={e => e.currentTarget.style.background = "var(--input-bg)"}

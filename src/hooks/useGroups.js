@@ -5,6 +5,8 @@ import {
   getDoc, serverTimestamp, deleteDoc
 } from "firebase/firestore";
 
+// ---------- Constants ----------
+
 const MAX_GROUPS_PER_PERSON = 7;
 const MAX_MEMBERS_PER_GROUP = 6;
 const MIN_MEMBERS_FOR_CHAT = 2;
@@ -12,7 +14,9 @@ const MIN_MEMBERS_FOR_CHAT = 2;
 const ADJECTIVES = ["Bold", "Curious", "Stellar", "Radical", "Cosmic", "Mighty", "Vivid", "Epic", "Mystic", "Chill", "Savage", "Hyper", "Legendary", "Golden", "Sonic"];
 const NOUNS = ["Crew", "Squad", "Gang", "Pack", "Circle", "Club", "Collective", "Alliance", "Guild", "Tribe", "Posse", "Unit", "Syndicate", "League", "Faction"];
 
-function generateGroupName(interest) {
+// ---------- Utility functions ----------
+
+export function generateGroupName(interest) {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   const topic = interest ? interest.charAt(0).toUpperCase() + interest.slice(1) : "General";
@@ -42,14 +46,10 @@ async function getInterestMeta(interest) {
   const snap = await getDoc(doc(db, "interests", "master", "items", id));
 
   if (!snap.exists()) {
-    return {
-      interest: normaliseInterest(interest),
-      categories: [],
-    };
+    return { interest: normaliseInterest(interest), categories: [] };
   }
 
   const data = snap.data();
-
   return {
     interest: normaliseInterest(data.interest || interest),
     categories: data.categories || [],
@@ -69,7 +69,6 @@ async function getInterestMetaMap(interests) {
 function hasSharedCategory(a, b) {
   const categoriesA = a.categories || [];
   const categoriesB = b.categories || [];
-
   return categoriesA.some(category => categoriesB.includes(category));
 }
 
@@ -78,26 +77,17 @@ function scoreInterestPair(userInterest, groupInterest, metaMap) {
   const groupNorm = normaliseInterest(groupInterest);
 
   if (userNorm === groupNorm) {
-    return {
-      score: 2,
-      exactMatch: true,
-    };
+    return { score: 2, exactMatch: true };
   }
 
   const userMeta = metaMap[userNorm] || { categories: [] };
   const groupMeta = metaMap[groupNorm] || { categories: [] };
 
   if (hasSharedCategory(userMeta, groupMeta)) {
-    return {
-      score: 1,
-      exactMatch: false,
-    };
+    return { score: 1, exactMatch: false };
   }
 
-  return {
-    score: 0,
-    exactMatch: false,
-  };
+  return { score: 0, exactMatch: false };
 }
 
 function scoreGroupForUser(userInterests, groupInterests, metaMap) {
@@ -110,239 +100,107 @@ function scoreGroupForUser(userInterests, groupInterests, metaMap) {
 
     for (const groupInterest of groupInterests) {
       const result = scoreInterestPair(userInterest, groupInterest, metaMap);
-
-      if (result.score > bestScoreForInterest) {
-        bestScoreForInterest = result.score;
-      }
-
-      if (result.exactMatch) {
-        hasExactMatch = true;
-      }
+      if (result.score > bestScoreForInterest) bestScoreForInterest = result.score;
+      if (result.exactMatch) hasExactMatch = true;
     }
 
     totalScore += bestScoreForInterest;
     if (hasExactMatch) exactMatches++;
   }
 
+  return { totalScore, exactMatches };
+}
+
+// ---------- Shared helpers ----------
+
+async function loadUserData(uid) {
+  const userDoc = await getDoc(doc(db, "users", uid));
+  const userData = userDoc.data();
   return {
-    totalScore,
-    exactMatches,
+    currentGroups: userData.groups || [],
+    maxGroups: userData.maxGroups || MAX_GROUPS_PER_PERSON,
   };
 }
 
-export async function joinStandardGroup(userProfile) {
-  const uid = auth.currentUser.uid;
-
-  const userDoc = await getDoc(doc(db, "users", uid));
-  const userData = userDoc.data();
-  const currentGroups = userData.groups || [];
-  const maxGroups = userData.maxGroups || MAX_GROUPS_PER_PERSON;
-
-  if (currentGroups.length >= maxGroups) {
-    return { success: false, reason: "max_groups" };
-  }
-
-  const userInterests = (userProfile.interests || []).map(normaliseInterest).filter(Boolean);
-
+async function loadAvailableGroups(uid, currentGroups, extraFilter) {
   const groupsSnap = await getDocs(collection(db, "groups"));
-  const allGroups = groupsSnap.docs
+  return groupsSnap.docs
     .map(d => ({ id: d.id, ...d.data() }))
     .filter(g =>
       (g.members || []).length < MAX_MEMBERS_PER_GROUP &&
       !(g.members || []).includes(uid) &&
-      !currentGroups.includes(g.id)
+      !currentGroups.includes(g.id) &&
+      (extraFilter ? extraFilter(g) : true)
     );
+}
 
+// Scores every candidate group against the user's interests and returns the
+// best match (ties broken randomly). priority "score" ranks by matchScore
+// first (standard/filtered join); priority "exact" ranks by exactMatches
+// first (precise join). Returns null if nothing scores above 0.
+async function findBestGroup(userInterests, allGroups, priority = "score") {
   const groupInterests = allGroups.flatMap(g =>
     (g.sharedInterests || []).map(normaliseInterest).filter(Boolean)
   );
 
-  const metaMap = await getInterestMetaMap([
-    ...userInterests,
-    ...groupInterests,
-  ]);
+  const metaMap = await getInterestMetaMap([...userInterests, ...groupInterests]);
 
   const scoredGroups = allGroups
     .map(group => {
       const sharedInterests = (group.sharedInterests || [])
         .map(normaliseInterest)
         .filter(Boolean);
-
       const score = scoreGroupForUser(userInterests, sharedInterests, metaMap);
-
-      return {
-        ...group,
-        matchScore: score.totalScore,
-        exactMatches: score.exactMatches,
-      };
+      return { ...group, matchScore: score.totalScore, exactMatches: score.exactMatches };
     })
     .filter(group => group.matchScore > 0);
 
-  if (scoredGroups.length > 0) {
-    scoredGroups.sort((a, b) => {
-      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-      return b.exactMatches - a.exactMatches;
-    });
+  if (scoredGroups.length === 0) return null;
 
-    const bestScore = scoredGroups[0].matchScore;
-    const bestExactMatches = scoredGroups[0].exactMatches;
-
-    const bestGroups = scoredGroups.filter(group =>
-      group.matchScore === bestScore &&
-      group.exactMatches === bestExactMatches
-    );
-
-    const group = bestGroups[Math.floor(Math.random() * bestGroups.length)];
-    const joinedAt = Date.now();
-
-    const exactShared = getCommonInterests(
-      userInterests,
-      group.sharedInterests || []
-    );
-
-    const updatedSharedInterests = exactShared.length > 0
-      ? exactShared
-      : group.sharedInterests || [];
-
-    await updateDoc(doc(db, "groups", group.id), {
-      members: arrayUnion(uid),
-      memberCount: (group.members || []).length + 1,
-      sharedInterests: updatedSharedInterests,
-      name: generateGroupName(updatedSharedInterests[0]),
-      [`memberJoinedAt.${uid}`]: joinedAt
-    });
-
-    await updateDoc(doc(db, "users", uid), {
-      groups: arrayUnion(group.id)
-    });
-
-    return {
-      success: true,
-      groupId: group.id,
-      matchScore: group.matchScore,
-      exactMatches: group.exactMatches,
-    };
-  }
-
-  const joinedAt = Date.now();
-
-  const newGroup = await addDoc(collection(db, "groups"), {
-    name: generateGroupName(userInterests[0]),
-    members: [uid],
-    memberCount: 1,
-    sharedInterests: userInterests,
-    createdAt: serverTimestamp(),
-    type: "matched"
-  });
-
-  await updateDoc(doc(db, "users", uid), {
-    groups: arrayUnion(newGroup.id)
-  });
-
-  await updateDoc(doc(db, "users", uid), {
-    groups: arrayUnion(newGroup.id)
-  });
-
-  return {
-    success: true,
-    groupId: newGroup.id,
-    waitingForMembers: true,
-  };
-}
-
-export async function joinPreciseGroup(userProfile) {
-  const uid = auth.currentUser.uid;
-  const userDoc = await getDoc(doc(db, "users", uid));
-  const userData = userDoc.data();
-  const currentGroups = userData.groups || [];
-  const maxGroups = userData.maxGroups || MAX_GROUPS_PER_PERSON;
-
-  if (currentGroups.length >= maxGroups) {
-    return { success: false, reason: "max_groups" };
-  }
-
-  const userInterests = (userProfile.interests || []).map(normaliseInterest).filter(Boolean);
-
-  const groupsSnap = await getDocs(collection(db, "groups"));
-  const allGroups = groupsSnap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(g =>
-      (g.members || []).length < MAX_MEMBERS_PER_GROUP &&
-      !(g.members || []).includes(uid) &&
-      !currentGroups.includes(g.id)
-    );
-
-  const groupInterests = allGroups.flatMap(g =>
-    (g.sharedInterests || []).map(normaliseInterest).filter(Boolean)
-  );
-
-  const metaMap = await getInterestMetaMap([
-    ...userInterests,
-    ...groupInterests,
-  ]);
-
-  const scoredGroups = allGroups
-    .map(group => {
-      const sharedInterests = (group.sharedInterests || [])
-        .map(normaliseInterest)
-        .filter(Boolean);
-
-      const score = scoreGroupForUser(userInterests, sharedInterests, metaMap);
-
-      return {
-        ...group,
-        matchScore: score.totalScore,
-        exactMatches: score.exactMatches,
-      };
-    })
-    .filter(group => group.matchScore > 0);
-
-  if (scoredGroups.length > 0) {
-    scoredGroups.sort((a, b) => {
+  scoredGroups.sort((a, b) => {
+    if (priority === "exact") {
       if (b.exactMatches !== a.exactMatches) return b.exactMatches - a.exactMatches;
       return b.matchScore - a.matchScore;
-    });
+    }
+    if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+    return b.exactMatches - a.exactMatches;
+  });
 
-    const bestExactMatches = scoredGroups[0].exactMatches;
-    const bestScore = scoredGroups[0].matchScore;
+  const best = scoredGroups[0];
+  const tiedGroups = scoredGroups.filter(g =>
+    g.matchScore === best.matchScore && g.exactMatches === best.exactMatches
+  );
 
-    const bestGroups = scoredGroups.filter(group =>
-      group.exactMatches === bestExactMatches &&
-      group.matchScore === bestScore
-    );
+  return tiedGroups[Math.floor(Math.random() * tiedGroups.length)];
+}
 
-    const group = bestGroups[Math.floor(Math.random() * bestGroups.length)];
-    const joinedAt = Date.now();
+// Joins the user into an existing (already-scored) group, refreshing the
+// group's shared interests and name to reflect the overlap with the new member.
+async function joinExistingGroup(uid, userInterests, group, extraFields = {}) {
+  const joinedAt = Date.now();
 
-    const exactShared = getCommonInterests(
-      userInterests,
-      group.sharedInterests || []
-    );
+  const exactShared = getCommonInterests(userInterests, group.sharedInterests || []);
+  const updatedSharedInterests = exactShared.length > 0
+    ? exactShared
+    : (group.sharedInterests || []);
 
-    const updatedSharedInterests = exactShared.length > 0
-      ? exactShared
-      : group.sharedInterests || [];
+  await updateDoc(doc(db, "groups", group.id), {
+    members: arrayUnion(uid),
+    memberCount: (group.members || []).length + 1,
+    sharedInterests: updatedSharedInterests,
+    name: generateGroupName(updatedSharedInterests[0]),
+    [`memberJoinedAt.${uid}`]: joinedAt,
+  });
 
-    await updateDoc(doc(db, "groups", group.id), {
-      members: arrayUnion(uid),
-      memberCount: (group.members || []).length + 1,
-      sharedInterests: updatedSharedInterests,
-      name: generateGroupName(updatedSharedInterests[0]),
-      [`memberJoinedAt.${uid}`]: joinedAt
-    });
+  await updateDoc(doc(db, "users", uid), {
+    groups: arrayUnion(group.id),
+  });
 
-    await updateDoc(doc(db, "users", uid), {
-      groups: arrayUnion(group.id)
-    });
+  return { success: true, groupId: group.id, ...extraFields };
+}
 
-    return {
-      success: true,
-      groupId: group.id,
-      matchScore: group.matchScore,
-      exactMatches: group.exactMatches,
-    };
-  }
-
+// Creates a brand-new group when no suitable existing group was found.
+async function createNewGroup(uid, userInterests) {
   const joinedAt = Date.now();
 
   const newGroup = await addDoc(collection(db, "groups"), {
@@ -353,204 +211,83 @@ export async function joinPreciseGroup(userProfile) {
     createdAt: serverTimestamp(),
     type: "matched",
     historyForAll: false,
-    memberJoinedAt: { [uid]: joinedAt }
+    memberJoinedAt: { [uid]: joinedAt },
   });
 
   await updateDoc(doc(db, "users", uid), {
-    groups: arrayUnion(newGroup.id)
+    groups: arrayUnion(newGroup.id),
   });
 
-  return {
-    success: true,
-    groupId: newGroup.id,
-    waitingForMembers: true,
-  };
+  return { success: true, groupId: newGroup.id, waitingForMembers: true };
+}
+
+// ---------- Public APIs ----------
+
+export async function joinStandardGroup(userProfile) {
+  const uid = auth.currentUser.uid;
+  const { currentGroups, maxGroups } = await loadUserData(uid);
+  if (currentGroups.length >= maxGroups) return { success: false, reason: "max_groups" };
+
+  const userInterests = (userProfile.interests || []).map(normaliseInterest).filter(Boolean);
+  const allGroups = await loadAvailableGroups(uid, currentGroups);
+  const group = await findBestGroup(userInterests, allGroups, "score");
+
+  if (group) {
+    return joinExistingGroup(uid, userInterests, group, {
+      matchScore: group.matchScore,
+      exactMatches: group.exactMatches,
+    });
+  }
+
+  return createNewGroup(uid, userInterests);
 }
 
 export async function joinSimilarGroup(userProfile) {
   const uid = auth.currentUser.uid;
-  const userDoc = await getDoc(doc(db, "users", uid));
-  const userData = userDoc.data();
-  const currentGroups = userData.groups || [];
-  const maxGroups = userData.maxGroups || MAX_GROUPS_PER_PERSON;
-
-  if (currentGroups.length >= maxGroups) {
-    return { success: false, reason: "max_groups" };
-  }
+  const { currentGroups, maxGroups } = await loadUserData(uid);
+  if (currentGroups.length >= maxGroups) return { success: false, reason: "max_groups" };
 
   const userInterests = (userProfile.interests || []).map(normaliseInterest).filter(Boolean);
+  const allGroups = await loadAvailableGroups(uid, currentGroups);
+  // "Similar" ranks groups by category overlap rather than requiring exact
+  // interest matches — same scoring, but priority stays on total score so
+  // category-only matches (score 1) still count as good candidates.
+  const group = await findBestGroup(userInterests, allGroups, "score");
 
-  const groupsSnap = await getDocs(collection(db, "groups"));
-  const allGroups = groupsSnap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(g =>
-      (g.members || []).length < MAX_MEMBERS_PER_GROUP &&
-      !(g.members || []).includes(uid) &&
-      !currentGroups.includes(g.id)
-    );
-
-  const groupInterests = allGroups.flatMap(g =>
-    (g.sharedInterests || []).map(normaliseInterest).filter(Boolean)
-  );
-
-  const metaMap = await getInterestMetaMap([
-    ...userInterests,
-    ...groupInterests,
-  ]);
-
-  function scoreByCategory(userInterest, groupInterest, metaMap) {
-    const userNorm = normaliseInterest(userInterest);
-    const groupNorm = normaliseInterest(groupInterest);
-
-    if (userNorm === groupNorm) {
-      return {
-        score: 1,
-        exactMatch: true,
-      };
-    }
-
-    const userMeta = metaMap[userNorm] || { categories: [] };
-    const groupMeta = metaMap[groupNorm] || { categories: [] };
-
-    if (hasSharedCategory(userMeta, groupMeta)) {
-      return {
-        score: 1,
-        exactMatch: false,
-      };
-    }
-
-    return {
-      score: 0,
-      exactMatch: false,
-    };
-  }
-  
-  function scoreGroupForUserByCategory(userInterests, groupInterests, metaMap) {
-    let totalScore = 0;
-    let exactMatches = 0;
-
-    for (const userInterest of userInterests) {
-      let bestScoreForInterest = 0;
-      let hasExactMatch = false;
-
-      for (const groupInterest of groupInterests) {
-        const result = scoreByCategory(userInterest, groupInterest, metaMap);
-
-        if (result.score > bestScoreForInterest) {
-          bestScoreForInterest = result.score;
-        }
-
-        if (result.exactMatch) {
-          hasExactMatch = true;
-        }
-      }
-
-      totalScore += bestScoreForInterest;
-      if (hasExactMatch) exactMatches++;
-    }
-
-    return {
-      totalScore,
-      exactMatches,
-    };
-  }
-
-  const scoredGroups = allGroups
-    .map(group => {
-      const sharedInterests = (group.sharedInterests || [])
-        .map(normaliseInterest)
-        .filter(Boolean);
-
-      const score = scoreGroupForUserByCategory(userInterests, sharedInterests, metaMap);
-
-      return {
-        ...group,
-        matchScore: score.totalScore,
-        exactMatches: score.exactMatches,
-      };
-    })
-    .filter(group => group.matchScore > 0);
-
-  if (scoredGroups.length > 0) {
-    scoredGroups.sort((a, b) => {
-      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-      return b.exactMatches - a.exactMatches;
-    });
-
-    const bestScore = scoredGroups[0].matchScore;
-    const bestExactMatches = scoredGroups[0].exactMatches;
-
-    const bestGroups = scoredGroups.filter(group =>
-      group.matchScore === bestScore &&
-      group.exactMatches === bestExactMatches
-    );
-
-    const group = bestGroups[Math.floor(Math.random() * bestGroups.length)];
-    const joinedAt = Date.now();
-
-    const exactShared = getCommonInterests(
-      userInterests,
-      group.sharedInterests || []
-    );
-
-    const updatedSharedInterests = exactShared.length > 0
-      ? exactShared
-      : group.sharedInterests || [];
-
-    await updateDoc(doc(db, "groups", group.id), {
-      members: arrayUnion(uid),
-      memberCount: (group.members || []).length + 1,
-      sharedInterests: updatedSharedInterests,
-      name: generateGroupName(updatedSharedInterests[0]),
-      [`memberJoinedAt.${uid}`]: joinedAt
-    });
-
-    await updateDoc(doc(db, "users", uid), {
-      groups: arrayUnion(group.id)
-    });
-
-    return {
-      success: true,
-      groupId: group.id,
+  if (group) {
+    return joinExistingGroup(uid, userInterests, group, {
       matchScore: group.matchScore,
       exactMatches: group.exactMatches,
-    };
+    });
   }
 
-  const joinedAt = Date.now();
+  return createNewGroup(uid, userInterests);
+}
 
-  const newGroup = await addDoc(collection(db, "groups"), {
-    name: generateGroupName(userInterests[0]),
-    members: [uid],
-    memberCount: 1,
-    sharedInterests: userInterests,
-    createdAt: serverTimestamp(),
-    type: "matched",
-    historyForAll: false,
-    memberJoinedAt: { [uid]: joinedAt }
-  });
 
-  await updateDoc(doc(db, "users", uid), {
-    groups: arrayUnion(newGroup.id)
-  });
+export async function joinPreciseGroup(userProfile) {
+  const uid = auth.currentUser.uid;
+  const { currentGroups, maxGroups } = await loadUserData(uid);
+  if (currentGroups.length >= maxGroups) return { success: false, reason: "max_groups" };
 
-  return {
-    success: true,
-    groupId: newGroup.id,
-    waitingForMembers: true,
-  };
+  const userInterests = (userProfile.interests || []).map(normaliseInterest).filter(Boolean);
+  const allGroups = await loadAvailableGroups(uid, currentGroups);
+  const group = await findBestGroup(userInterests, allGroups, "exact");
+
+  if (group) {
+    return joinExistingGroup(uid, userInterests, group, {
+      matchScore: group.matchScore,
+      exactMatches: group.exactMatches,
+    });
+  }
+
+  return createNewGroup(uid, userInterests);
 }
 
 export async function joinFilteredGroup(userProfile, blacklistedInterests = []) {
   const uid = auth.currentUser.uid;
-  const userDoc = await getDoc(doc(db, "users", uid));
-  const userData = userDoc.data();
-  const currentGroups = userData.groups || [];
-  const maxGroups = userData.maxGroups || MAX_GROUPS_PER_PERSON;
-
-  if (currentGroups.length >= maxGroups) {
-    return { success: false, reason: "max_groups" };
-  }
+  const { currentGroups, maxGroups } = await loadUserData(uid);
+  if (currentGroups.length >= maxGroups) return { success: false, reason: "max_groups" };
 
   const userInterests = (userProfile.interests || []).map(normaliseInterest).filter(Boolean);
 
@@ -559,144 +296,30 @@ export async function joinFilteredGroup(userProfile, blacklistedInterests = []) 
     ...blacklistedInterests,
   ].map(normaliseInterest).filter(Boolean);
 
-  const groupsSnap = await getDocs(collection(db, "groups"));
-  const allGroups = groupsSnap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(g => {
-      const groupInterests = (g.sharedInterests || [])
-        .map(normaliseInterest)
-        .filter(Boolean);
+  const allGroups = await loadAvailableGroups(uid, currentGroups, (g) => {
+    const groupInterests = (g.sharedInterests || []).map(normaliseInterest).filter(Boolean);
+    return !groupInterests.some(interest => blacklist.includes(interest));
+  });
 
-      const hasBlacklistedInterest = groupInterests.some(interest =>
-        blacklist.includes(interest)
-      );
+  const group = await findBestGroup(userInterests, allGroups, "score");
 
-      return (
-        (g.members || []).length < MAX_MEMBERS_PER_GROUP &&
-        !(g.members || []).includes(uid) &&
-        !currentGroups.includes(g.id) &&
-        !hasBlacklistedInterest
-      );
-    });
-
-  const groupInterests = allGroups.flatMap(g =>
-    (g.sharedInterests || []).map(normaliseInterest).filter(Boolean)
-  );
-
-  const metaMap = await getInterestMetaMap([
-    ...userInterests,
-    ...groupInterests,
-  ]);
-
-  const scoredGroups = allGroups
-    .map(group => {
-      const sharedInterests = (group.sharedInterests || [])
-        .map(normaliseInterest)
-        .filter(Boolean);
-
-      const score = scoreGroupForUser(userInterests, sharedInterests, metaMap);
-
-      return {
-        ...group,
-        matchScore: score.totalScore,
-        exactMatches: score.exactMatches,
-      };
-    })
-    .filter(group => group.matchScore > 0);
-
-  if (scoredGroups.length > 0) {
-    scoredGroups.sort((a, b) => {
-      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-      return b.exactMatches - a.exactMatches;
-    });
-
-    const bestScore = scoredGroups[0].matchScore;
-    const bestExactMatches = scoredGroups[0].exactMatches;
-
-    const bestGroups = scoredGroups.filter(group =>
-      group.matchScore === bestScore &&
-      group.exactMatches === bestExactMatches
-    );
-
-    const group = bestGroups[Math.floor(Math.random() * bestGroups.length)];
-    const joinedAt = Date.now();
-
-    const exactShared = getCommonInterests(
-      userInterests,
-      group.sharedInterests || []
-    );
-
-    const updatedSharedInterests = exactShared.length > 0
-      ? exactShared
-      : group.sharedInterests || [];
-
-    await updateDoc(doc(db, "groups", group.id), {
-      members: arrayUnion(uid),
-      memberCount: (group.members || []).length + 1,
-      sharedInterests: updatedSharedInterests,
-      name: generateGroupName(updatedSharedInterests[0]),
-      [`memberJoinedAt.${uid}`]: joinedAt
-    });
-
-    await updateDoc(doc(db, "users", uid), {
-      groups: arrayUnion(group.id)
-    });
-
-    return {
-      success: true,
-      groupId: group.id,
+  if (group) {
+    return joinExistingGroup(uid, userInterests, group, {
       matchScore: group.matchScore,
       exactMatches: group.exactMatches,
-    };
+    });
   }
 
-  const joinedAt = Date.now();
-
-  const newGroup = await addDoc(collection(db, "groups"), {
-    name: generateGroupName(userInterests[0]),
-    members: [uid],
-    memberCount: 1,
-    sharedInterests: userInterests,
-    createdAt: serverTimestamp(),
-    type: "matched",
-    historyForAll: false,
-    memberJoinedAt: { [uid]: joinedAt }
-  });
-
-  await updateDoc(doc(db, "users", uid), {
-    groups: arrayUnion(newGroup.id)
-  });
-
-  return {
-    success: true,
-    groupId: newGroup.id,
-    waitingForMembers: true,
-  };
+  return createNewGroup(uid, userInterests);
 }
 
 export async function joinRandomGroup(userProfile) {
   const uid = auth.currentUser.uid;
-  const userDoc = await getDoc(doc(db, "users", uid));
-  const userData = userDoc.data();
-  const currentGroups = userData.groups || [];
-  const maxGroups = userData.maxGroups || MAX_GROUPS_PER_PERSON;
+  const { currentGroups, maxGroups } = await loadUserData(uid);
+  if (currentGroups.length >= maxGroups) return { success: false, reason: "max_groups" };
 
-  if (currentGroups.length >= maxGroups) {
-    return { success: false, reason: "max_groups" };
-  }
-
-  const userInterests = (userProfile.interests || [])
-    .map(normaliseInterest)
-    .filter(Boolean);
-
-  const groupsSnap = await getDocs(collection(db, "groups"));
-  const allGroups = groupsSnap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(g =>
-      (g.members || []).length < MAX_MEMBERS_PER_GROUP &&
-      !(g.members || []).includes(uid) &&
-      !currentGroups.includes(g.id)
-    );
+  const userInterests = (userProfile.interests || []).map(normaliseInterest).filter(Boolean);
+  const allGroups = await loadAvailableGroups(uid, currentGroups);
 
   if (allGroups.length > 0) {
     const group = allGroups[Math.floor(Math.random() * allGroups.length)];
@@ -705,91 +328,56 @@ export async function joinRandomGroup(userProfile) {
     await updateDoc(doc(db, "groups", group.id), {
       members: arrayUnion(uid),
       memberCount: (group.members || []).length + 1,
-      [`memberJoinedAt.${uid}`]: joinedAt
+      [`memberJoinedAt.${uid}`]: joinedAt,
     });
 
     await updateDoc(doc(db, "users", uid), {
-      groups: arrayUnion(group.id)
+      groups: arrayUnion(group.id),
     });
 
-    return {
-      success: true,
-      groupId: group.id,
-    };
+    return { success: true, groupId: group.id };
   }
 
-  const joinedAt = Date.now();
-
-  const newGroup = await addDoc(collection(db, "groups"), {
-    name: generateGroupName(userInterests[0]),
-    members: [uid],
-    memberCount: 1,
-    sharedInterests: userInterests,
-    createdAt: serverTimestamp(),
-    type: "matched",
-    historyForAll: false,
-    memberJoinedAt: { [uid]: joinedAt }
-  });
-
-  await updateDoc(doc(db, "users", uid), {
-    groups: arrayUnion(newGroup.id)
-  });
-
-  return {
-    success: true,
-    groupId: newGroup.id,
-    waitingForMembers: true,
-  };
+  return createNewGroup(uid, userInterests);
 }
 
+export async function leaveGroup(groupId) {
+  const uid = auth.currentUser.uid;
 
+  const groupRef = doc(db, "groups", groupId);
+  const userRef = doc(db, "users", uid);
 
-
-  export async function leaveGroup(groupId) {
-    const uid = auth.currentUser.uid;
-
-    const groupRef = doc(db, "groups", groupId);
-    const userRef = doc(db, "users", uid);
-
-    // Transfer admin rights if this user is admin
-    const groupSnap = await getDoc(doc(db, "groups", groupId));
-    if (groupSnap.exists()) {
-      const data = groupSnap.data();
-      if (data.adminId === uid) {
-        const nextAdmin = (data.members || []).find(m => m !== uid);
-        if (nextAdmin) {
-          await updateDoc(doc(db, "groups", groupId), { adminId: nextAdmin });
-        }
+  // Transfer admin rights if this user is admin
+  const groupSnap = await getDoc(groupRef);
+  if (groupSnap.exists()) {
+    const data = groupSnap.data();
+    if (data.adminId === uid) {
+      const nextAdmin = (data.members || []).find(m => m !== uid);
+      if (nextAdmin) {
+        await updateDoc(groupRef, { adminId: nextAdmin });
       }
     }
-
-    // Automatic deletion if last member leaves group
-
-    const groupSnap2 = await getDoc(groupRef);
-    if (!groupSnap2.exists()) {
-      await updateDoc(userRef, {
-        groups: arrayRemove(groupId)
-      });
-
-      return { success: true, deleted: false, reason: "group_missing" };
-    }
-
-    const groupData = groupSnap2.data();
-    const remainingMembers = (groupData.members || []).filter(id => id !== uid);
-
-    if (remainingMembers.length === 0) {
-      await deleteDoc(groupRef);
-
-      await updateDoc(userRef, {
-        groups: arrayRemove(groupId)
-      });
-
-      return { success: true, deleted: true };
-    }
-
-    await updateDoc(doc(db, "groups", groupId), { members: arrayRemove(uid) });
-    await updateDoc(doc(db, "users", uid), { groups: arrayRemove(groupId) });
-    return { success: true };
   }
+
+  // Automatic deletion if last member leaves group
+  const groupSnap2 = await getDoc(groupRef);
+  if (!groupSnap2.exists()) {
+    await updateDoc(userRef, { groups: arrayRemove(groupId) });
+    return { success: true, deleted: false, reason: "group_missing" };
+  }
+
+  const groupData = groupSnap2.data();
+  const remainingMembers = (groupData.members || []).filter(id => id !== uid);
+
+  if (remainingMembers.length === 0) {
+    await deleteDoc(groupRef);
+    await updateDoc(userRef, { groups: arrayRemove(groupId) });
+    return { success: true, deleted: true };
+  }
+
+  await updateDoc(groupRef, { members: arrayRemove(uid) });
+  await updateDoc(userRef, { groups: arrayRemove(groupId) });
+  return { success: true };
+}
 
 export { MIN_MEMBERS_FOR_CHAT };

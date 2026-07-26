@@ -39,22 +39,43 @@ export default function Matchmaking() {
   };
 
   const handleStandardMatch = async (mode = "surprise") => {
-    if (!userProfile) return;
-    if (userGroups.length >= (userProfile?.maxGroups || 5)) { setMessage(`❌ You're in ${userProfile?.maxGroups || 5} groups — leave one first!`); return; }
-    setJoining(true); setJoiningMode(mode); setMessage("");
-    const result = await joinStandardGroup(userProfile, mode);
-    if (result.success) {
-      if (result.waitingForMembers) {
-        setMessage("Group created! Waiting for others with similar interests...");
-        await fetchProfile();
-      } else {
-        setMessage("Matched into a group!");
-        setTimeout(() => navigate(`/chat/${result.groupId}`), 500);
+    try {
+      if (!userProfile) return;
+
+      if (userGroups.length >= (userProfile?.maxGroups || 5)) {
+        setMessage(`❌ You're in ${userProfile?.maxGroups || 5} groups — leave one first!`);
+        return;
       }
-    } else {
-      setMessage("Could not find a match right now. Try creating a group!");
+
+      setJoining(true);
+      setJoiningMode(mode);
+      setMessage("");
+
+      console.log("Starting standard match...");
+      console.log(userProfile);
+
+      const result = await joinStandardGroup(userProfile);
+
+      console.log("Match result:", result);
+
+      if (result.success) {
+        if (result.waitingForMembers) {
+          setMessage("Group created! Waiting for others...");
+          await fetchProfile();
+        } else {
+          setMessage("Matched!");
+          setTimeout(() => navigate(`/chat/${result.groupId}`), 500);
+        }
+      } else {
+        setMessage("Could not find a match.");
+      }
+    } catch (err) {
+      console.error("MATCH ERROR:", err);
+      setMessage(err.message);
     }
-    setJoining(false); setJoiningMode("");
+
+    setJoining(false);
+    setJoiningMode("");
   };
 
   const handlePreciseMatch = async (mode = "surprise") => {

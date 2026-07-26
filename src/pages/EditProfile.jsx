@@ -88,10 +88,13 @@ export default function EditProfile() {
 
       setSaving(true);
 
-      const interests = interestText
-        .split(",")
-        .map((s) => s.toLowerCase().trim())
-        .filter(Boolean);
+      const savedInterests = await saveInterestsToDatabases(interests);
+
+      if (!savedInterests.success) {
+        alert(`Could not save interest: ${savedInterests.failedInterest.reason}`);
+        setSaving(false);
+        return;
+      }
 
       await updateDoc(userRef, {
         username,
@@ -99,7 +102,7 @@ export default function EditProfile() {
         year,
         bio,
         telegram,
-        interests,
+        interests: savedInterests.interests,
         photoURL: avatarUrl,
         updatedAt: new Date(),
       });

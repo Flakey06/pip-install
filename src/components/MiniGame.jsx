@@ -555,7 +555,7 @@ export default function MiniGame({ groupId, members, onClose }) {
         {screen === "quickdraw" && gameData && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "700", margin: 0, fontFamily: "Inter, sans-serif", color: "var(--text)" }}>✏️ Quick Draw</h3>
+              <h3 style={{ fontSize: "16px", fontWeight: "700", margin: 0, fontFamily: "Inter, sans-serif", color: "var(--text)" }}> Guess The Word</h3>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 {timeLeft !== null && (
                   <span style={{ fontSize: "14px", fontWeight: "700", color: timeLeft < 10 ? "#ef4444" : "var(--text)", fontFamily: "Inter, sans-serif" }}>

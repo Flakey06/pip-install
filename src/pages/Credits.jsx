@@ -91,7 +91,7 @@ export default function Credits() {
     { icon: "👆", label: "Vote in Most Likely To", coins: 2 },
     { icon: "🧠", label: "Play Trivia", coins: 3 },
     { icon: "✅", label: "Correct Trivia / Two Truths", coins: 10 },
-    { icon: "✏️", label: "First to solve Quick Draw", coins: 10 },
+    { icon: "✏️", label: "First to solve Guess The Word", coins: 10 },
   ];
 
   const tabStyle = (tab) => ({

@@ -346,11 +346,19 @@ export async function joinPreciseGroup(userProfile) {
 
   if (scoredGroups.length > 0) {
     scoredGroups.sort((a, b) => {
-      if (b.exactMatches !== a.xactMatches) return b.xactMatches - a.xactMatches;
+      if (b.exactMatches !== a.exactMatches) return b.exactMatches - a.exactMatches;
       return b.matchScore - a.matchScore;
     });
 
-    const group = scoredGroupsGroups[Math.floor(Math.random() * bestGroups.length)];
+    const bestExactMatches = scoredGroups[0].exactMatches;
+    const bestScore = scoredGroups[0].matchScore;
+
+    const bestGroups = scoredGroups.filter(group =>
+      group.exactMatches === bestExactMatches &&
+      group.matchScore === bestScore
+    );
+
+    const group = bestGroups[Math.floor(Math.random() * bestGroups.length)];
     const joinedAt = Date.now();
 
     const exactShared = getCommonInterests(

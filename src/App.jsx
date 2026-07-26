@@ -18,7 +18,7 @@ import GroupInfo from "./pages/GroupInfo";
 import Credits from "./pages/Credits";
 import NUSVerify from "./pages/NUSVerify";
 import NUSVerifyComplete from "./pages/NUSVerifyComplete";
-import LumaEvents from "./pages/LumaEvents";
+import OpenInvite from "./pages/OpenInvite";
 
 function ProtectedRoute({ children }) {
   if (!auth.currentUser) return <Navigate to="/" replace />;
@@ -47,7 +47,7 @@ function App() {
         <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
         <Route path="/nus-verify" element={<ProtectedRoute><NUSVerify /></ProtectedRoute>} />
         <Route path="/nus-verify-complete" element={<NUSVerifyComplete />} />
-        <Route path="/luma-events" element={<ProtectedRoute><LumaEvents /></ProtectedRoute>} />
+        <Route path="/open-invite" element={<ProtectedRoute><OpenInvite /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

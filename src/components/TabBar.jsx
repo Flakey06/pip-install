@@ -30,7 +30,7 @@ const TABS = [
       </svg>
     )
   },
-  { path: "/luma-events", label: "Open Invite",
+  { path: "/open-invite", label: "Open Invite",
     icon: (active) => (
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--purple-dark)" : "var(--text-muted)"} strokeWidth={active ? "2.5" : "2"} strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" />

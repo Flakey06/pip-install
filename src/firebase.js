@@ -16,5 +16,5 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
-export const rtdb = getDatabase(app, "https://pip-install-21154-default-rtdb.asia-southeast1.firebasedatabase.app");
+export const rtdb = getDatabase(app, import.meta.env.VITE_FIREBASE_DATABASE_URL);
 export const storage = null; 

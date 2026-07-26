@@ -1,0 +1,37 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "chats": {
+      "$groupId": {
+        "messages": {
+          ".read": "auth != null",
+          "$messageId": {
+            ".write": "(auth != null && newData.child('senderId').val() == auth.uid) || (auth != null && newData.child('senderId').val() == 'system')",
+            ".validate": "newData.hasChildren(['text', 'senderId', 'senderName', 'timestamp'])"
+          }
+        }
+      }
+    },
+
+    "games": {
+      "$groupId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "privateChats": {
+      "$chatId": {
+        "messages": {
+          ".read": "auth != null && $chatId.contains(auth.uid)",
+          "$messageId": {
+            ".write": "auth != null && $chatId.contains(auth.uid) && newData.child('senderId').val() == auth.uid",
+            ".validate": "newData.hasChildren(['text', 'senderId', 'senderName', 'timestamp'])"
+          }
+        }
+      }
+    }
+  }
+}

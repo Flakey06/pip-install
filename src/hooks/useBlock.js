@@ -21,8 +21,14 @@ export async function unblockUser(targetUid) {
 export async function isBlocked(targetUid) {
   const uid = auth.currentUser?.uid;
   if (!uid) return false;
-  const snap = await getDoc(doc(db, "blocks", `${uid}_${targetUid}`));
-  return snap.exists();
+
+  try {
+    const snap = await getDoc(doc(db, "blocks", `${uid}_${targetUid}`));
+    return snap.exists();
+  } catch (error) {
+    console.error("isBlocked error:", error);
+    return false;
+  }
 }
 
 export async function getBlockedUsers() {

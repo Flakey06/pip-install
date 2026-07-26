@@ -4,7 +4,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { initializeApp } from "firebase/app";
 
-const VAPID_KEY = "YOUR_VAPID_KEY"; // Get from Firebase Console → Project Settings → Cloud Messaging
+const VAPID_KEY = "YOUR_VAPID_KEY"; 
 
 export async function requestNotificationPermission() {
   try {

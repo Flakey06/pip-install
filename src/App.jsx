@@ -16,6 +16,7 @@ import GroupCalendar from "./pages/GroupCalendar";
 import Calendar from "./pages/Calendar";
 import GroupInfo from "./pages/GroupInfo";
 import Credits from "./pages/Credits";
+import Matchmaking from "./pages/Matchmaking";
 import NUSVerify from "./pages/NUSVerify";
 import NUSVerifyComplete from "./pages/NUSVerifyComplete";
 import OpenInvite from "./pages/OpenInvite";
@@ -40,6 +41,7 @@ function App() {
         <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
         <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
         <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+        <Route path="/matchmaking" element={<ProtectedRoute><Matchmaking /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
         <Route path="/private-chat/:friendId" element={<ProtectedRoute><PrivateChat /></ProtectedRoute>} />
         <Route path="/calendar/:groupId" element={<ProtectedRoute><GroupCalendar /></ProtectedRoute>} />

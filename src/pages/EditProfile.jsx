@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { useInterests } from "../hooks/useInterests";
+import { useInterests, saveInterestsToDatabases } from "../hooks/useInterests";
+import InterestSelector from "../components/InterestSelector";
 import AvatarPicker from "../components/AvatarPicker";
 
 export default function EditProfile() {
@@ -13,7 +14,8 @@ export default function EditProfile() {
   const [year, setYear] = useState("");
   const [bio, setBio] = useState("");
   const [telegram, setTelegram] = useState("");
-  const [interestText, setInterestText] = useState("");
+  const [interests, setInterests] = useState([]);
+  const { allInterests, addToMaster } = useInterests();
   const [avatarUrl, setAvatarUrl] = useState("");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -31,7 +33,7 @@ export default function EditProfile() {
         setYear(d.year || "");
         setBio(d.bio || "");
         setTelegram(d.telegram || "");
-        setInterestText((d.interests || []).join(", "));
+        setInterests(d.interests || []);
         setAvatarUrl(d.photoURL || "");
       }
     };
@@ -42,9 +44,18 @@ export default function EditProfile() {
  /* const handleSave = async () => {
     if (!username) { alert("Username required!"); return; }
     setSaving(true);
-    const interests = interestText.split(",").map(s => s.toLowerCase().trim()).filter(Boolean);
+    
+    const savedInterests = await saveInterestsToDatabases(interests);
+
+    if (!savedInterests.success) {
+      alert(`Could not save interest: ${savedInterests.failedInterest.reason}`);
+      setSaving(false);
+      return;
+    }
+
     await updateDoc(doc(db, "users", auth.currentUser.uid), {
-      username, major, year, bio, telegram, interests,
+      username, major, year, bio, telegram,
+      interests: savedInterests.interests,
       photoURL: avatarUrl, updatedAt: new Date()
     });
     navigate("/home");
@@ -117,7 +128,6 @@ export default function EditProfile() {
     { label: "Bio", value: bio, set: setBio, placeholder: "Tell people about yourself" },
     { label: "Major", value: major, set: setMajor, placeholder: "e.g. Computer Science" },
     { label: "Telegram", value: telegram, set: setTelegram, placeholder: "@handle" },
-    { label: "Interests (comma separated)", value: interestText, set: setInterestText, placeholder: "e.g. AI, basketball, music" },
   ];
 
   return (
@@ -161,6 +171,15 @@ export default function EditProfile() {
             />
           </div>
         ))}
+
+        <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border)" }}>
+          <InterestSelector
+            interests={interests}
+            setInterests={setInterests}
+            allInterests={allInterests}
+            addToMaster={addToMaster}
+          />
+        </div>
 
         <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border)" }}>
           <label className="input-label">Year of Study</label>

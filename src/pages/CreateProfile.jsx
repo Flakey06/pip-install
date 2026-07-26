@@ -3,7 +3,7 @@ import { useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { useInterests } from "../hooks/useInterests";
+import { useInterests, saveInterestsToDatabases } from "../hooks/useInterests";
 import AvatarPicker from "../components/AvatarPicker";
 
 const STEPS = 6;
@@ -57,12 +57,20 @@ export default function CreateProfile() {
     setSaving(true);
     const user = auth.currentUser;
     const finalAvatar = avatarUrl || user.photoURL || defaultAvatar;
+    const savedInterests = await saveInterestsToDatabases(interests);
+
+    if (!savedInterests.success) {
+      alert(`Could not save interest: ${savedInterests.failedInterest.reason}`);
+      setSaving(false);
+      return;
+    }
+
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid, email: user.email,
       photoURL: finalAvatar,
       username: username.trim(), major: major.trim(),
       year, bio: bio.trim(), telegram: telegram.trim(),
-      interests, groups: [], createdAt: new Date()
+      interests: savedInterests.interests, groups: [], createdAt: new Date()
     });
     navigate("/onboarding");
   };

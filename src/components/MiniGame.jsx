@@ -47,19 +47,35 @@ export default function MiniGame({ groupId, members, onClose }) {
   }, [screen, gameData?.startedAt]);
 
   const endGame = async () => {
-    await remove(gameRef);
     setScreen("menu");
     setMyVote(null);
     setMyAnswer(null);
     setMyGuess("");
     setMyStatement({ t1: "", t2: "", lie: "", submitted: false });
+
+    remove(gameRef).catch((error) => {
+      console.error("Could not clear game:", error);
+    });
   };
 
   // ── WYR ──
   const startWYR = async () => {
     const q = WOULD_YOU_RATHER[Math.floor(Math.random() * WOULD_YOU_RATHER.length)];
-    await set(gameRef, { type: "wyr", question: q, votes: { a: [], b: [] }, startedBy: me, startedAt: Date.now() });
+    const nextGame = {
+      type: "wyr",
+      question: q,
+      votes: { a: [], b: [] },
+      startedBy: me,
+      startedAt: Date.now()
+    };
+
+    setGameData(nextGame);
+    setScreen("wyr");
     setMyVote(null);
+
+    set(gameRef, nextGame).catch((error) => {
+      console.error("Could not start Would You Rather:", error);
+    });
   };
 
   const voteWYR = async (side) => {

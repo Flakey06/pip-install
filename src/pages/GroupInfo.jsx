@@ -76,14 +76,17 @@ export default function GroupInfo() {
     setGroupData(p => ({ ...p, historyForAll: newVal }));
   };
 
-  const startVideoCall = async () => {
+  const startVideoCall = () => {
+    setShowVideoCall(true);
+
     const messagesRef = ref(rtdb, `chats/${groupId}/messages`);
-    await push(messagesRef, {
+    push(messagesRef, {
       text: `${profile?.username || "Someone"} started a video call 📹 — join at meet.jit.si/pip-install-${groupId}`,
       senderId: "system", senderName: "system", senderPhoto: "",
       timestamp: Date.now(), type: "system"
+    }).catch((error) => {
+      console.error("Could not announce video call:", error);
     });
-    setShowVideoCall(true);
   };
 
 

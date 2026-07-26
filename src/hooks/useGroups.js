@@ -5,7 +5,6 @@ import {
   getDoc, serverTimestamp, deleteDoc
 } from "firebase/firestore";
 
-// ---------- Constants ----------
 
 const MAX_GROUPS_PER_PERSON = 7;
 const MAX_MEMBERS_PER_GROUP = 6;
@@ -14,7 +13,6 @@ const MIN_MEMBERS_FOR_CHAT = 2;
 const ADJECTIVES = ["Bold", "Curious", "Stellar", "Radical", "Cosmic", "Mighty", "Vivid", "Epic", "Mystic", "Chill", "Savage", "Hyper", "Legendary", "Golden", "Sonic"];
 const NOUNS = ["Crew", "Squad", "Gang", "Pack", "Circle", "Club", "Collective", "Alliance", "Guild", "Tribe", "Posse", "Unit", "Syndicate", "League", "Faction"];
 
-// ---------- Utility functions ----------
 
 export function generateGroupName(interest) {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
@@ -111,7 +109,6 @@ function scoreGroupForUser(userInterests, groupInterests, metaMap) {
   return { totalScore, exactMatches };
 }
 
-// ---------- Shared helpers ----------
 
 async function loadUserData(uid) {
   const userDoc = await getDoc(doc(db, "users", uid));
@@ -134,10 +131,6 @@ async function loadAvailableGroups(uid, currentGroups, extraFilter) {
     );
 }
 
-// Scores every candidate group against the user's interests and returns the
-// best match (ties broken randomly). priority "score" ranks by matchScore
-// first (standard/filtered join); priority "exact" ranks by exactMatches
-// first (precise join). Returns null if nothing scores above 0.
 async function findBestGroup(userInterests, allGroups, priority = "score") {
   const groupInterests = allGroups.flatMap(g =>
     (g.sharedInterests || []).map(normaliseInterest).filter(Boolean)
@@ -174,8 +167,6 @@ async function findBestGroup(userInterests, allGroups, priority = "score") {
   return tiedGroups[Math.floor(Math.random() * tiedGroups.length)];
 }
 
-// Joins the user into an existing (already-scored) group, refreshing the
-// group's shared interests and name to reflect the overlap with the new member.
 async function joinExistingGroup(uid, userInterests, group, extraFields = {}) {
   const joinedAt = Date.now();
 
@@ -221,7 +212,6 @@ async function createNewGroup(uid, userInterests) {
   return { success: true, groupId: newGroup.id, waitingForMembers: true };
 }
 
-// ---------- Public APIs ----------
 
 export async function joinStandardGroup(userProfile) {
   const uid = auth.currentUser.uid;
@@ -249,9 +239,6 @@ export async function joinSimilarGroup(userProfile) {
 
   const userInterests = (userProfile.interests || []).map(normaliseInterest).filter(Boolean);
   const allGroups = await loadAvailableGroups(uid, currentGroups);
-  // "Similar" ranks groups by category overlap rather than requiring exact
-  // interest matches — same scoring, but priority stays on total score so
-  // category-only matches (score 1) still count as good candidates.
   const group = await findBestGroup(userInterests, allGroups, "score");
 
   if (group) {

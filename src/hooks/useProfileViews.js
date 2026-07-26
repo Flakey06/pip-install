@@ -23,7 +23,6 @@ export async function getViewerProfiles(uid) {
       where("viewedUid", "==", uid)
     ));
     const views = snap.docs.map(d => d.data());
-    // Sort client-side instead of using orderBy (avoids needing composite index)
     views.sort((a, b) => (b.viewedAt?.toMillis?.() || 0) - (a.viewedAt?.toMillis?.() || 0));
     const uniqueViewers = [...new Set(views.map(v => v.viewerUid))].slice(0, 10);
     const profiles = await Promise.all(

@@ -14,6 +14,8 @@ export default function LumaEvents() {
   const [details, setDetails] = useState("");
   const [location, setLocation] = useState("");
   const [when, setWhen] = useState("");
+  const [historyForAll, setHistoryForAll] = useState(false);
+  const [maxAttendees, setMaxAttendees] = useState("");
 
   useEffect(() => {
     const q = query(collection(db, "openInvites"), orderBy("createdAt", "desc"));
@@ -32,6 +34,9 @@ export default function LumaEvents() {
     if (!auth.currentUser) return;
     if (!title.trim()) return;
 
+    const parsedMax = parseInt(maxAttendees, 10);
+    const cap = Number.isFinite(parsedMax) && parsedMax >= 2 ? parsedMax : null;
+
     setSubmitting(true);
     try {
       const groupRef = await addDoc(collection(db, "groups"), {
@@ -42,7 +47,8 @@ export default function LumaEvents() {
         adminId: auth.currentUser.uid,
         type: "openInvite",
         createdAt: serverTimestamp(),
-        historyForAll: false,
+        historyForAll,
+        maxAttendees: cap,
         memberJoinedAt: { [auth.currentUser.uid]: Date.now() },
       });
 
@@ -56,6 +62,7 @@ export default function LumaEvents() {
         createdAt: serverTimestamp(),
         attendees: [auth.currentUser.uid],
         groupId: groupRef.id,
+        maxAttendees: cap,
       });
 
       await updateDoc(doc(db, "users", auth.currentUser.uid), {
@@ -66,6 +73,8 @@ export default function LumaEvents() {
       setDetails("");
       setLocation("");
       setWhen("");
+      setHistoryForAll(false);
+      setMaxAttendees("");
     } finally {
       setSubmitting(false);
     }
@@ -74,6 +83,7 @@ export default function LumaEvents() {
   const handleJoinInvite = async (invite, attendees = []) => {
     if (!auth.currentUser) return;
     if (attendees.includes(auth.currentUser.uid)) return;
+    if (invite.maxAttendees && attendees.length >= invite.maxAttendees) return;
 
     const joinedAt = Date.now();
     await updateDoc(doc(db, "openInvites", invite.id), {
@@ -120,6 +130,26 @@ export default function LumaEvents() {
             <textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Add a quick note" rows="3" style={{ padding: "12px 14px", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--input-bg)", color: "var(--text)", resize: "vertical" }} />
             <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location or meetup spot" style={{ padding: "12px 14px", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--input-bg)", color: "var(--text)" }} />
             <input value={when} onChange={(e) => setWhen(e.target.value)} placeholder="When? e.g. Tonight, 8pm" style={{ padding: "12px 14px", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--input-bg)", color: "var(--text)" }} />
+
+            <input
+              type="number"
+              min="2"
+              value={maxAttendees}
+              onChange={(e) => setMaxAttendees(e.target.value)}
+              placeholder="Max people (optional, leave blank for no limit)"
+              style={{ padding: "12px 14px", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--input-bg)", color: "var(--text)" }}
+            />
+
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 2px", fontSize: "13px", color: "var(--text)", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={historyForAll}
+                onChange={(e) => setHistoryForAll(e.target.checked)}
+                style={{ width: "16px", height: "16px" }}
+              />
+              Let new members see full chat history
+            </label>
+
             <button type="submit" disabled={submitting} style={{ padding: "12px", borderRadius: "12px", border: "none", background: "var(--purple-dark)", color: "white", fontWeight: "700", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.8 : 1 }}>
               {submitting ? "Posting..." : "Post invite"}
             </button>
@@ -138,11 +168,14 @@ export default function LumaEvents() {
               {invites.map((invite) => {
                 const attendees = Array.isArray(invite.attendees) ? invite.attendees : [];
                 const joined = attendees.includes(auth.currentUser?.uid);
+                const isFull = !!invite.maxAttendees && attendees.length >= invite.maxAttendees;
                 return (
                   <div key={invite.id} style={{ padding: "16px", borderRadius: "14px", border: "1px solid var(--border)", background: "var(--card)", display: "flex", flexDirection: "column", gap: "8px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
                       <p style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "var(--text)" }}>{invite.title}</p>
-                      <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{attendees.length} going</span>
+                      <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                        {attendees.length}{invite.maxAttendees ? `/${invite.maxAttendees}` : ""} going
+                      </span>
                     </div>
                     {invite.details && <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)" }}>{invite.details}</p>}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", fontSize: "13px", color: "var(--text-muted)" }}>
@@ -151,10 +184,10 @@ export default function LumaEvents() {
                     </div>
                     <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)" }}>Hosted by {invite.createdByName || "someone"}</p>
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <button onClick={() => handleJoinInvite(invite, attendees)} disabled={joined} style={{ padding: "8px 12px", borderRadius: "999px", border: "none", background: joined ? "var(--border)" : "var(--purple-dark)", color: joined ? "var(--text)" : "white", cursor: joined ? "default" : "pointer", fontWeight: "700" }}>
-                        {joined ? "You’re in" : "Join invite"}
+                      <button onClick={() => handleJoinInvite(invite, attendees)} disabled={joined || isFull} style={{ padding: "8px 12px", borderRadius: "999px", border: "none", background: (joined || isFull) ? "var(--border)" : "var(--purple-dark)", color: (joined || isFull) ? "var(--text)" : "white", cursor: (joined || isFull) ? "default" : "pointer", fontWeight: "700" }}>
+                        {joined ? "You’re in" : isFull ? "Full" : "Join invite"}
                       </button>
-                      {invite.groupId && (
+                      {invite.groupId && joined && (
                         <button onClick={() => navigate(`/chat/${invite.groupId}`)} style={{ padding: "8px 12px", borderRadius: "999px", border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)", fontWeight: "700" }}>
                           Open chat
                         </button>

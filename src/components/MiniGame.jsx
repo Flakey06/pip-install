@@ -1,8 +1,8 @@
-// file use: In-chat games — WYR, Trivia, Most Likely To, Two Truths, Quick Draw
+// file use: In-chat games — WYR, Trivia, Most Likely To, Two Truths, Guess The Word
 import { useState, useEffect } from "react";
 import { auth, rtdb } from "../firebase";
 import { ref, set, onValue, remove, push } from "firebase/database";
-import { WOULD_YOU_RATHER, TRIVIA, MOST_LIKELY_TO, TWO_TRUTHS_PROMPTS, QUICK_DRAW_WORDS } from "../utils/gameData";
+import { WOULD_YOU_RATHER, TRIVIA, MOST_LIKELY_TO, TWO_TRUTHS_PROMPTS } from "../utils/gameData";
 import { awardCredits } from "../hooks/useCredits";
 
 export default function MiniGame({ groupId, members, onClose }) {
@@ -11,6 +11,7 @@ export default function MiniGame({ groupId, members, onClose }) {
   const [myVote, setMyVote] = useState(null);
   const [myAnswer, setMyAnswer] = useState(null);
   const [myGuess, setMyGuess] = useState("");
+  const [wordInput, setWordInput] = useState("");
   const [myStatement, setMyStatement] = useState({ t1: "", t2: "", lie: "", submitted: false });
   const [coinToast, setCoinToast] = useState("");
   const [timeLeft, setTimeLeft] = useState(null);
@@ -34,9 +35,9 @@ export default function MiniGame({ groupId, members, onClose }) {
     return () => unsubscribe();
   }, [groupId]);
 
-  // Timer for Quick Draw
+  // Timer for Guess The Word - only runs once the round has actually started
   useEffect(() => {
-    if (screen !== "quickdraw" || !gameData?.startedAt) return;
+    if (screen !== "quickdraw" || gameData?.phase !== "playing" || !gameData?.startedAt) return;
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - gameData.startedAt) / 1000);
       const remaining = 60 - elapsed;
@@ -44,13 +45,14 @@ export default function MiniGame({ groupId, members, onClose }) {
       if (remaining <= 0) clearInterval(interval);
     }, 1000);
     return () => clearInterval(interval);
-  }, [screen, gameData?.startedAt]);
+  }, [screen, gameData?.phase, gameData?.startedAt]);
 
   const endGame = async () => {
     setScreen("menu");
     setMyVote(null);
     setMyAnswer(null);
     setMyGuess("");
+    setWordInput("");
     setMyStatement({ t1: "", t2: "", lie: "", submitted: false });
 
     remove(gameRef).catch((error) => {
@@ -164,16 +166,71 @@ export default function MiniGame({ groupId, members, onClose }) {
     await set(ref(rtdb, `games/${groupId}/revealed`), true);
   };
 
-  const startQuickDraw = async () => {
-    const word = QUICK_DRAW_WORDS[Math.floor(Math.random() * QUICK_DRAW_WORDS.length)];
-    const drawer = members[Math.floor(Math.random() * members.length)]?.uid;
-    await set(gameRef, { type: "quickdraw", word, drawer, guesses: {}, solved: false, startedBy: me, startedAt: Date.now() });
+  // ── GUESS THE WORD ──
+  // Phase "lobby": the starter (setter) writes their own word, other members
+  // explicitly confirm they're joining before the round can begin — this
+  // keeps everyone in sync instead of guessing starting the instant one
+  // person clicks the menu item.
+  const startQuickDrawLobby = async () => {
+    const nextGame = {
+      type: "quickdraw",
+      phase: "lobby",
+      setter: me,
+      word: null,
+      joined: { [me]: true },
+      guesses: {},
+      solved: false,
+      solvedBy: null,
+      startedBy: me,
+      startedAt: null,
+    };
+    setGameData(nextGame);
+    setScreen("quickdraw");
     setMyGuess("");
+    setWordInput("");
+    setTimeLeft(null);
+
+    set(gameRef, nextGame).catch((error) => {
+      console.error("Could not start Guess The Word lobby:", error);
+    });
+  };
+
+  const submitQuickDrawWord = async () => {
+    if (!wordInput.trim()) return;
+    await set(ref(rtdb, `games/${groupId}/word`), wordInput.trim());
+  };
+
+  const toggleJoinQuickDraw = async (joining) => {
+    if (joining) {
+      await set(ref(rtdb, `games/${groupId}/joined/${me}`), true);
+    } else {
+      await remove(ref(rtdb, `games/${groupId}/joined/${me}`));
+    }
+  };
+
+  const beginQuickDrawRound = async () => {
+    await set(ref(rtdb, `games/${groupId}/phase`), "playing");
+    await set(ref(rtdb, `games/${groupId}/startedAt`), Date.now());
     setTimeLeft(60);
+  };
+
+  // Setter starts a fresh round - keeps the same confirmed players so
+  // they don't have to rejoin every time, but requires a new word.
+  const newQuickDrawRound = async () => {
+    await set(ref(rtdb, `games/${groupId}/phase`), "lobby");
+    await set(ref(rtdb, `games/${groupId}/word`), null);
+    await set(ref(rtdb, `games/${groupId}/guesses`), {});
+    await set(ref(rtdb, `games/${groupId}/solved`), false);
+    await set(ref(rtdb, `games/${groupId}/solvedBy`), null);
+    await set(ref(rtdb, `games/${groupId}/startedAt`), null);
+    setMyGuess("");
+    setWordInput("");
+    setTimeLeft(null);
   };
 
   const submitGuess = async () => {
     if (!myGuess.trim() || gameData?.solved) return;
+    if (!gameData?.joined?.[me]) return; // only players who confirmed in the lobby can guess
     const guess = myGuess.trim().toLowerCase();
     const word = gameData?.word?.toLowerCase();
     await push(ref(rtdb, `games/${groupId}/guesses`), { uid: me, text: myGuess.trim(), correct: guess === word, at: Date.now() });
@@ -211,6 +268,14 @@ export default function MiniGame({ groupId, members, onClose }) {
   const totalWYR = (wyrVotes.a?.length || 0) + (wyrVotes.b?.length || 0);
   const pctA = totalWYR > 0 ? Math.round((wyrVotes.a?.length || 0) / totalWYR * 100) : 50;
   const pctB = 100 - pctA;
+
+  // Guess The Word derived state
+  const qdSetter = gameData?.setter;
+  const qdIsSetter = qdSetter === me;
+  const qdJoined = gameData?.joined || {};
+  const qdConfirmedGuessers = Object.keys(qdJoined).filter(uid => uid !== qdSetter);
+  const qdCanStart = !!gameData?.word && qdConfirmedGuessers.length >= 1;
+  const qdIJoined = !!qdJoined[me];
 
   return (
     <div style={{
@@ -256,7 +321,7 @@ export default function MiniGame({ groupId, members, onClose }) {
                 { icon: "🧠", title: "Trivia Quiz", desc: "Answer questions · +3🪙, +10🪙 correct", action: startTrivia },
                 { icon: "👆", title: "Most Likely To", desc: "Vote who in the group · +2 🪙", action: startMLT },
                 { icon: "🤥", title: "Two Truths One Lie", desc: "Find the lie · +10🪙 correct", action: startTTL },
-                { icon: "✏️", title: "Guess The Word", desc: "Guess the word · +10🪙 first guess", action: startQuickDraw },
+                { icon: "✏️", title: "Guess The Word", desc: "One person picks a word · others confirm & guess · +10🪙 first guess", action: startQuickDrawLobby },
               ].map(item => (
                 <button key={item.title} onClick={item.action} style={menuBtnStyle}
                   onMouseEnter={e => e.currentTarget.style.background = "var(--input-bg)"}
@@ -551,13 +616,13 @@ export default function MiniGame({ groupId, members, onClose }) {
           </>
         )}
 
-        {/* ── QUICK DRAW ── */}
+        {/* ── GUESS THE WORD ── */}
         {screen === "quickdraw" && gameData && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "700", margin: 0, fontFamily: "Inter, sans-serif", color: "var(--text)" }}> Guess The Word</h3>
+              <h3 style={{ fontSize: "16px", fontWeight: "700", margin: 0, fontFamily: "Inter, sans-serif", color: "var(--text)" }}>✏️ Guess The Word</h3>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                {timeLeft !== null && (
+                {gameData.phase === "playing" && timeLeft !== null && (
                   <span style={{ fontSize: "14px", fontWeight: "700", color: timeLeft < 10 ? "#ef4444" : "var(--text)", fontFamily: "Inter, sans-serif" }}>
                     ⏱ {timeLeft}s
                   </span>
@@ -566,75 +631,161 @@ export default function MiniGame({ groupId, members, onClose }) {
               </div>
             </div>
 
-            {/* Drawer sees the word */}
-            {gameData?.drawer === me && (
-              <div style={{ padding: "14px", borderRadius: "12px", background: "var(--purple-dark)", marginBottom: "14px", textAlign: "center" }}>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "0 0 4px", fontFamily: "Inter, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>Your word to describe:</p>
-                <p style={{ fontSize: "28px", fontWeight: "800", color: "var(--bg)", margin: 0, fontFamily: "Inter, sans-serif" }}>{gameData.word}</p>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "6px 0 0", fontFamily: "Inter, sans-serif" }}>Describe it without saying the word!</p>
-              </div>
-            )}
-
-            {/* Others guess */}
-            {gameData?.drawer !== me && (
-              <div style={{ marginBottom: "14px" }}>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: "0 0 10px", fontFamily: "Inter, sans-serif" }}>
-                  <strong style={{ color: "var(--text)" }}>{getUserName(gameData.drawer)}</strong> is describing a word — guess it! (+10 🪙 first correct)
-                </p>
-                {!gameData?.solved && timeLeft > 0 && (
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      value={myGuess}
-                      onChange={e => setMyGuess(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && submitGuess()}
-                      placeholder="Type your guess..."
-                      className="input-underline"
-                      style={{ flex: 1 }}
-                    />
-                    <button onClick={submitGuess} style={{ ...actionBtnStyle(true), width: "auto", padding: "8px 16px" }}>
-                      Guess
+            {/* ── LOBBY PHASE ── */}
+            {gameData.phase === "lobby" && (
+              <>
+                {qdIsSetter ? (
+                  <div style={{ padding: "14px", borderRadius: "12px", background: "var(--purple-light)", border: `1px solid var(--border)`, marginBottom: "16px" }}>
+                    <p style={{ fontSize: "12px", fontWeight: "700", color: "var(--purple-dark)", margin: "0 0 8px", fontFamily: "Inter, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      You're the word-setter
+                    </p>
+                    {!gameData.word ? (
+                      <>
+                        <input
+                          value={wordInput}
+                          onChange={e => setWordInput(e.target.value)}
+                          onKeyDown={e => e.key === "Enter" && submitQuickDrawWord()}
+                          placeholder="Think of a word..."
+                          className="input-underline"
+                          style={{ marginBottom: "10px" }}
+                        />
+                        <button onClick={submitQuickDrawWord} disabled={!wordInput.trim()} style={{ ...actionBtnStyle(true), width: "100%" }}>
+                          Set Word ✅
+                        </button>
+                      </>
+                    ) : (
+                      <p style={{ fontSize: "13px", color: "var(--purple-dark)", margin: 0, fontFamily: "Inter, sans-serif" }}>
+                        ✅ Your word is set. Waiting for people to confirm before you start the round.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ padding: "14px", borderRadius: "12px", background: "var(--card)", border: `1px solid var(--border)`, marginBottom: "16px", textAlign: "center" }}>
+                    <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: "0 0 10px", fontFamily: "Inter, sans-serif" }}>
+                      <strong style={{ color: "var(--text)" }}>{getUserName(qdSetter)}</strong> is thinking of a word{gameData.word ? " and is ready" : "..."}
+                    </p>
+                    <button
+                      onClick={() => toggleJoinQuickDraw(!qdIJoined)}
+                      style={{
+                        ...actionBtnStyle(!qdIJoined), width: "100%",
+                        background: qdIJoined ? "#f0fdf4" : "var(--purple-dark)",
+                        color: qdIJoined ? "#15803d" : "var(--bg)",
+                        border: qdIJoined ? "1px solid #bbf7d0" : "none"
+                      }}
+                    >
+                      {qdIJoined ? "✅ You're in — tap to leave" : "I'm in! Join this round"}
                     </button>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Solved banner */}
-            {gameData?.solved && (
-              <div style={{ padding: "12px", borderRadius: "10px", background: "#f0fdf4", border: "1px solid #bbf7d0", textAlign: "center", marginBottom: "14px" }}>
-                <p style={{ fontWeight: "700", color: "#15803d", margin: "0 0 2px", fontSize: "15px", fontFamily: "Inter, sans-serif" }}>
-                  ✅ {gameData.word}
-                </p>
-                <p style={{ color: "#15803d", margin: 0, fontSize: "12px", fontFamily: "Inter, sans-serif" }}>
-                  First solved by {getUserName(gameData.solvedBy)}!
-                </p>
-              </div>
-            )}
-
-            {/* Time up */}
-            {timeLeft === 0 && !gameData?.solved && (
-              <div style={{ padding: "12px", borderRadius: "10px", background: "#fff5f5", border: "1px solid #fecaca", textAlign: "center", marginBottom: "14px" }}>
-                <p style={{ fontWeight: "700", color: "#dc2626", margin: "0 0 2px", fontFamily: "Inter, sans-serif" }}>⏰ Time's up!</p>
-                <p style={{ color: "#dc2626", margin: 0, fontSize: "12px", fontFamily: "Inter, sans-serif" }}>The word was: <strong>{gameData.word}</strong></p>
-              </div>
-            )}
-
-            {/* Guess log */}
-            <div style={{ maxHeight: "160px", overflowY: "auto", marginBottom: "14px" }}>
-              {Object.entries(gameData?.guesses || {}).sort((a, b) => (a[1]?.at || 0) - (b[1]?.at || 0)).map(([key, g]) => (
-                <div key={key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 0" }}>
-                  <span style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>{getUserName(g.uid)}:</span>
-                  <span style={{ fontSize: "13px", fontWeight: "600", color: g.correct ? "#15803d" : "var(--text)", fontFamily: "Inter, sans-serif" }}>
-                    {g.text} {g.correct ? "✅" : ""}
-                  </span>
+                <div style={{ marginBottom: "16px" }}>
+                  <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>
+                    {qdConfirmedGuessers.length} confirmed to guess
+                  </p>
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {members.filter(m => m.uid !== qdSetter).map(m => (
+                      <span key={m.uid} style={{
+                        fontSize: "11px", padding: "2px 8px", borderRadius: "20px",
+                        background: qdJoined[m.uid] ? "var(--purple-light)" : "var(--input-bg)",
+                        color: qdJoined[m.uid] ? "var(--purple-dark)" : "var(--text-muted)",
+                        fontFamily: "Inter, sans-serif", border: `1px solid var(--border)`
+                      }}>
+                        {qdJoined[m.uid] ? "✓" : "⏳"} {m.username}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
 
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={startQuickDraw} style={actionBtnStyle(true)}>🔀 New Word</button>
-              <button onClick={endGame} style={actionBtnStyle(false)}>🏠 Menu</button>
-            </div>
+                {qdIsSetter && (
+                  <button onClick={beginQuickDrawRound} disabled={!qdCanStart} style={{ ...actionBtnStyle(true), width: "100%", marginBottom: "8px" }}>
+                    {qdCanStart ? "▶️ Start Round" : "Waiting for a word + at least 1 player..."}
+                  </button>
+                )}
+
+                <button onClick={endGame} style={{ ...actionBtnStyle(false), width: "100%" }}>🏠 Menu</button>
+              </>
+            )}
+
+            {/* ── PLAYING PHASE ── */}
+            {gameData.phase === "playing" && (
+              <>
+                {qdIsSetter && (
+                  <div style={{ padding: "14px", borderRadius: "12px", background: "var(--purple-dark)", marginBottom: "14px", textAlign: "center" }}>
+                    <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "0 0 4px", fontFamily: "Inter, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>Your word to describe:</p>
+                    <p style={{ fontSize: "28px", fontWeight: "800", color: "var(--bg)", margin: 0, fontFamily: "Inter, sans-serif" }}>{gameData.word}</p>
+                    <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "6px 0 0", fontFamily: "Inter, sans-serif" }}>Describe it without saying the word!</p>
+                  </div>
+                )}
+
+                {!qdIsSetter && qdIJoined && (
+                  <div style={{ marginBottom: "14px" }}>
+                    <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: "0 0 10px", fontFamily: "Inter, sans-serif" }}>
+                      <strong style={{ color: "var(--text)" }}>{getUserName(qdSetter)}</strong> is describing a word — guess it! (+10 🪙 first correct)
+                    </p>
+                    {!gameData?.solved && timeLeft > 0 && (
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <input
+                          value={myGuess}
+                          onChange={e => setMyGuess(e.target.value)}
+                          onKeyDown={e => e.key === "Enter" && submitGuess()}
+                          placeholder="Type your guess..."
+                          className="input-underline"
+                          style={{ flex: 1 }}
+                        />
+                        <button onClick={submitGuess} style={{ ...actionBtnStyle(true), width: "auto", padding: "8px 16px" }}>
+                          Guess
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!qdIsSetter && !qdIJoined && (
+                  <div style={{ padding: "12px", borderRadius: "10px", background: "var(--card)", border: `1px solid var(--border)`, textAlign: "center", marginBottom: "14px" }}>
+                    <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0, fontFamily: "Inter, sans-serif" }}>
+                      You didn't confirm before this round started, so you're spectating. Join next round!
+                    </p>
+                  </div>
+                )}
+
+                {/* Solved banner */}
+                {gameData?.solved && (
+                  <div style={{ padding: "12px", borderRadius: "10px", background: "#f0fdf4", border: "1px solid #bbf7d0", textAlign: "center", marginBottom: "14px" }}>
+                    <p style={{ fontWeight: "700", color: "#15803d", margin: "0 0 2px", fontSize: "15px", fontFamily: "Inter, sans-serif" }}>
+                      ✅ {gameData.word}
+                    </p>
+                    <p style={{ color: "#15803d", margin: 0, fontSize: "12px", fontFamily: "Inter, sans-serif" }}>
+                      First solved by {getUserName(gameData.solvedBy)}!
+                    </p>
+                  </div>
+                )}
+
+                {/* Time up */}
+                {timeLeft === 0 && !gameData?.solved && (
+                  <div style={{ padding: "12px", borderRadius: "10px", background: "#fff5f5", border: "1px solid #fecaca", textAlign: "center", marginBottom: "14px" }}>
+                    <p style={{ fontWeight: "700", color: "#dc2626", margin: "0 0 2px", fontFamily: "Inter, sans-serif" }}>⏰ Time's up!</p>
+                    <p style={{ color: "#dc2626", margin: 0, fontSize: "12px", fontFamily: "Inter, sans-serif" }}>The word was: <strong>{gameData.word}</strong></p>
+                  </div>
+                )}
+
+                {/* Guess log */}
+                <div style={{ maxHeight: "160px", overflowY: "auto", marginBottom: "14px" }}>
+                  {Object.entries(gameData?.guesses || {}).sort((a, b) => (a[1]?.at || 0) - (b[1]?.at || 0)).map(([key, g]) => (
+                    <div key={key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 0" }}>
+                      <span style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "Inter, sans-serif" }}>{getUserName(g.uid)}:</span>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: g.correct ? "#15803d" : "var(--text)", fontFamily: "Inter, sans-serif" }}>
+                        {g.text} {g.correct ? "✅" : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {qdIsSetter && <button onClick={newQuickDrawRound} style={actionBtnStyle(true)}>🔀 New Round</button>}
+                  <button onClick={endGame} style={actionBtnStyle(false)}>🏠 Menu</button>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

@@ -274,7 +274,11 @@ export default function GroupChat() {
         const historyForAll = groupData?.historyForAll || false;
         const joinedAt = groupData?.memberJoinedAt?.[uid] || 0;
 
-        const visibleMessages = (!historyForAll && !isAdmin && joinedAt)
+        // The group creator (admin) chooses at creation whether new members
+        // can see the full history, or only messages from after they joined.
+        const showFullHistory = historyForAll || isAdmin;
+
+        const visibleMessages = (!showFullHistory && joinedAt)
           ? messages.filter(m =>
               (m.timestamp || 0) >= joinedAt ||
               m.senderId === uid ||

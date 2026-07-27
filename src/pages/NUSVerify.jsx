@@ -1,7 +1,7 @@
 // file use: NUS student verification via @u.nus.edu email with 6-digit code
 import { useState } from "react";
 import { auth, db } from "../firebase";
-import { doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
+import { doc, updateDoc, setDoc, getDoc, runTransaction, collection, query, where, getDocs } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import emailjs from "@emailjs/browser";
 
@@ -22,6 +22,31 @@ export default function NUSVerify() {
   const isNUSEmail = (e) => e.toLowerCase().trim().endsWith("@u.nus.edu");
   const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+  // Quick, non-atomic advisory check so we can warn the user immediately
+  // instead of making them go through the whole email+code flow first.
+  // The real enforcement happens atomically in handleVerify via claimNusEmail.
+  const checkEmailAlreadyClaimed = async (normalizedEmail, uid) => {
+    const snap = await getDocs(
+      query(collection(db, "users"), where("nusEmail", "==", normalizedEmail), where("nusVerified", "==", true))
+    );
+    return snap.docs.some(d => d.id !== uid);
+  };
+
+  // Atomically claims the NUS email for this uid using a transaction on a
+  // doc keyed by the email itself. This avoids the race condition of a
+  // plain "query then write" approach (two people submitting the same
+  // email at nearly the same time could both pass a simple check).
+  const claimNusEmail = async (normalizedEmail, uid) => {
+    const claimRef = doc(db, "nusEmailClaims", normalizedEmail);
+    await runTransaction(db, async (transaction) => {
+      const claimSnap = await transaction.get(claimRef);
+      if (claimSnap.exists() && claimSnap.data().uid !== uid) {
+        throw new Error("EMAIL_ALREADY_CLAIMED");
+      }
+      transaction.set(claimRef, { uid, claimedAt: new Date() });
+    });
+  };
+
   const handleSend = async () => {
     if (!isNUSEmail(email)) {
       setError("Please enter a valid @u.nus.edu email address!");
@@ -30,13 +55,22 @@ export default function NUSVerify() {
     setSaving(true);
     setError("");
     try {
-      const verifyCode = generateCode();
       const uid = auth.currentUser?.uid;
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const alreadyClaimed = await checkEmailAlreadyClaimed(normalizedEmail, uid);
+      if (alreadyClaimed) {
+        setError("This NUS email is already verified on another account.");
+        setSaving(false);
+        return;
+      }
+
+      const verifyCode = generateCode();
 
       // Save code to Firestore
       await setDoc(doc(db, "nusVerifyCodes", uid), {
         code: verifyCode,
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         createdAt: new Date(),
         used: false
       });
@@ -46,7 +80,7 @@ export default function NUSVerify() {
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
         {
-          to_email: email.trim().toLowerCase(),
+          to_email: normalizedEmail,
           to_name: auth.currentUser?.displayName || "NUS Student",
           verify_code: verifyCode,
           from_name: "pip install"
@@ -103,13 +137,28 @@ export default function NUSVerify() {
         return;
       }
 
+      const normalizedEmail = data.email;
+
+      // Atomic, race-condition-safe claim - this is the real enforcement
+      // point for "one NUS email per account".
+      try {
+        await claimNusEmail(normalizedEmail, uid);
+      } catch (claimErr) {
+        if (claimErr.message === "EMAIL_ALREADY_CLAIMED") {
+          setError("This NUS email is already verified on another account.");
+          setVerifying(false);
+          return;
+        }
+        throw claimErr;
+      }
+
       // Mark code as used
       await updateDoc(doc(db, "nusVerifyCodes", uid), { used: true });
 
       // Award NUS badge
       await updateDoc(doc(db, "users", uid), {
         nusVerified: true,
-        nusEmail: email.trim().toLowerCase(),
+        nusEmail: normalizedEmail,
         nusVerifiedAt: new Date()
       });
 

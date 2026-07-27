@@ -1,5 +1,6 @@
 // code use: bottom navigation bar — Profile/Search/Messages/Explore/Community
 import { useNavigate, useLocation } from "react-router-dom";
+import { useNotificationCounts } from "../hooks/useNotificationCounts";
 
 const TABS = [
   { path: "/home", label: "Profile",
@@ -42,9 +43,19 @@ const TABS = [
   },
 ];
 
-export default function TabBar({ unread = 0 }) {
+export default function TabBar({ unread }) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Self-sufficient live count (friend requests + group unread), computed via
+  // real-time listeners inside the hook itself. This means the badge shows
+  // correctly no matter which page TabBar is mounted on, instead of relying
+  // on each page to calculate and pass it down as a prop.
+  const { totalCount } = useNotificationCounts();
+
+  // If a page explicitly passes `unread` (e.g. it already has fresher local
+  // state), prefer that; otherwise fall back to the hook's own live count.
+  const displayCount = typeof unread === "number" ? unread : totalCount;
 
   return (
     <div style={{
@@ -70,7 +81,7 @@ export default function TabBar({ unread = 0 }) {
             }}>
               {tab.label}
             </span>
-            {tab.path === "/groups" && unread > 0 && (
+            {tab.path === "/groups" && displayCount > 0 && (
               <span style={{
                 position: "absolute", top: 0, right: "4px",
                 background: "#ed4956", color: "white",
@@ -78,7 +89,7 @@ export default function TabBar({ unread = 0 }) {
                 fontWeight: "700", padding: "1px 5px",
                 border: `1.5px solid var(--bg)`
               }}>
-                {unread > 9 ? "9+" : unread}
+                {displayCount > 9 ? "9+" : displayCount}
               </span>
             )}
           </button>

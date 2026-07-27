@@ -2,7 +2,8 @@ import { db, auth } from "../firebase";
 import {
   collection, getDocs, doc, updateDoc,
   arrayUnion, arrayRemove, addDoc,
-  getDoc, serverTimestamp, deleteDoc
+  getDoc, serverTimestamp, deleteDoc,
+  query, where
 } from "firebase/firestore";
 
 
@@ -190,7 +191,6 @@ async function joinExistingGroup(uid, userInterests, group, extraFields = {}) {
   return { success: true, groupId: group.id, ...extraFields };
 }
 
-// Creates a brand-new group when no suitable existing group was found.
 async function createNewGroup(uid, userInterests) {
   const joinedAt = Date.now();
 
@@ -346,25 +346,43 @@ export async function leaveGroup(groupId) {
     }
   }
 
-  // Automatic deletion if last member leaves group
   const groupSnap2 = await getDoc(groupRef);
+
   if (!groupSnap2.exists()) {
-    await updateDoc(userRef, { groups: arrayRemove(groupId) });
+    await updateDoc(userRef, {
+      groups: arrayRemove(groupId),
+      openInviteGroups: arrayRemove(groupId),
+    });
     return { success: true, deleted: false, reason: "group_missing" };
   }
 
   const groupData = groupSnap2.data();
+  const isOpenInvite = groupData.type === "openInvite";
   const remainingMembers = (groupData.members || []).filter(id => id !== uid);
 
   if (remainingMembers.length === 0) {
     await deleteDoc(groupRef);
-    await updateDoc(userRef, { groups: arrayRemove(groupId) });
-    return { success: true, deleted: true };
+  } else {
+    await updateDoc(groupRef, {
+      members: arrayRemove(uid),
+      memberCount: remainingMembers.length,
+    });
+  }
+  await updateDoc(userRef, {
+    groups: arrayRemove(groupId),
+    openInviteGroups: arrayRemove(groupId),
+  });
+
+  if (isOpenInvite) {
+    const inviteSnap = await getDocs(
+      query(collection(db, "openInvites"), where("groupId", "==", groupId))
+    );
+    await Promise.all(
+      inviteSnap.docs.map(d => updateDoc(d.ref, { attendees: arrayRemove(uid) }))
+    );
   }
 
-  await updateDoc(groupRef, { members: arrayRemove(uid) });
-  await updateDoc(userRef, { groups: arrayRemove(groupId) });
-  return { success: true };
+  return { success: true, deleted: remainingMembers.length === 0 };
 }
 
 export { MIN_MEMBERS_FOR_CHAT };

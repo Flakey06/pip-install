@@ -1,9 +1,23 @@
 // file use: handles the email link click, awards NUS verified badge
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, runTransaction } from "firebase/firestore";
 import { isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+
+// Atomically claims the NUS email for this uid using a transaction on a doc
+// keyed by the email itself, so two accounts can't both verify the same
+// NUS email even if they complete this flow at nearly the same time.
+async function claimNusEmail(email, uid) {
+  const claimRef = doc(db, "nusEmailClaims", email);
+  await runTransaction(db, async (transaction) => {
+    const claimSnap = await transaction.get(claimRef);
+    if (claimSnap.exists() && claimSnap.data().uid !== uid) {
+      throw new Error("EMAIL_ALREADY_CLAIMED");
+    }
+    transaction.set(claimRef, { uid, claimedAt: new Date() });
+  });
+}
 
 export default function NUSVerifyComplete() {
   const [status, setStatus] = useState("loading"); // loading | success | error
@@ -30,19 +44,37 @@ export default function NUSVerifyComplete() {
           return;
         }
 
+        const normalizedEmail = email.trim().toLowerCase();
+
         // Complete sign in with email link (this verifies the email)
-        await signInWithEmailLink(auth, email, window.location.href);
+        await signInWithEmailLink(auth, normalizedEmail, window.location.href);
         localStorage.removeItem("nus_verify_email");
 
-        // Award NUS verified badge
         const user = auth.currentUser;
-        if (user) {
-          await updateDoc(doc(db, "users", user.uid), {
-            nusVerified: true,
-            nusEmail: email,
-            nusVerifiedAt: new Date()
-          });
+        if (!user) {
+          setStatus("error");
+          setError("Could not find your account. Please try again.");
+          return;
         }
+
+        // Enforce one NUS email per account before awarding the badge.
+        try {
+          await claimNusEmail(normalizedEmail, user.uid);
+        } catch (claimErr) {
+          if (claimErr.message === "EMAIL_ALREADY_CLAIMED") {
+            setStatus("error");
+            setError("This NUS email is already verified on another account.");
+            return;
+          }
+          throw claimErr;
+        }
+
+        // Award NUS verified badge
+        await updateDoc(doc(db, "users", user.uid), {
+          nusVerified: true,
+          nusEmail: normalizedEmail,
+          nusVerifiedAt: new Date()
+        });
 
         setStatus("success");
       } catch (err) {

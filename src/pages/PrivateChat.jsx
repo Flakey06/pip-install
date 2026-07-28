@@ -4,6 +4,7 @@ import { auth, db, rtdb } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { ref, push, onValue, serverTimestamp } from "firebase/database";
 import { useNavigate, useParams } from "react-router-dom";
+import { isBlocked, isBlockedBy } from "../hooks/useBlock";
 
 function PrivateChat() {
   const { friendId } = useParams();
@@ -11,12 +12,16 @@ function PrivateChat() {
   const [newMessage, setNewMessage] = useState("");
   const [friend, setFriend] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [iBlockedThem, setIBlockedThem] = useState(false);
+  const [theyBlockedMe, setTheyBlockedMe] = useState(false);
+  const [blockStatusLoaded, setBlockStatusLoaded] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const me = auth.currentUser?.uid;
 
 
   const chatId = [me, friendId].sort().join("_");
+  const canMessage = blockStatusLoaded && !iBlockedThem && !theyBlockedMe;
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -28,6 +33,23 @@ function PrivateChat() {
       if (friendSnap.exists()) setFriend(friendSnap.data());
     };
     fetchProfiles();
+  }, [friendId]);
+
+  // Check both directions - did I block them, or did they block me. Either
+  // way messaging should be disabled; previously nothing checked this at
+  // all here, so a blocked user could still message the person who blocked them.
+  useEffect(() => {
+    const checkBlockStatus = async () => {
+      setBlockStatusLoaded(false);
+      const [blockedByMe, blockedByThem] = await Promise.all([
+        isBlocked(friendId),
+        isBlockedBy(friendId),
+      ]);
+      setIBlockedThem(blockedByMe);
+      setTheyBlockedMe(blockedByThem);
+      setBlockStatusLoaded(true);
+    };
+    if (friendId) checkBlockStatus();
   }, [friendId]);
 
   useEffect(() => {
@@ -49,6 +71,10 @@ function PrivateChat() {
 
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
+    // Guard the actual write, not just the input UI - a disabled button can
+    // be re-enabled client-side, so this check has to live here too.
+    if (!canMessage) return;
+
     const messagesRef = ref(rtdb, `privateChats/${chatId}/messages`);
     await push(messagesRef, {
       text: newMessage.trim(),
@@ -139,36 +165,52 @@ function PrivateChat() {
         <div ref={messagesEndRef} />
       </div>
 
-
-      <div style={{
-        padding: "12px 16px", borderTop: "1px solid var(--border)",
-        display: "flex", gap: "10px", alignItems: "flex-end",
-        background: "var(--bg)", flexShrink: 0
-      }}>
-        <textarea
-          value={newMessage}
-          onChange={e => setNewMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          rows={1}
-          style={{
-            flex: 1, padding: "10px 14px", borderRadius: "20px",
-            border: "1.5px solid #e0e0e0", fontSize: "14px",
-            outline: "none", resize: "none", lineHeight: "1.5",
-            fontFamily: "inherit", color: "var(--text)", maxHeight: "120px"
-          }}
-        />
-        <button onClick={sendMessage} disabled={!newMessage.trim()} style={{
-          width: "42px", height: "42px", borderRadius: "50%",
-          background: newMessage.trim() ? "#4F46E5" : "#e0e0e0",
-          color: "var(--bg)", border: "none", fontSize: "16px",
-          cursor: newMessage.trim() ? "pointer" : "default",
-          display: "flex", alignItems: "center", justifyContent: "center",
+      {blockStatusLoaded && !canMessage && (
+        <div style={{
+          padding: "12px 16px", background: "var(--card)",
+          borderTop: "1px solid var(--border)", textAlign: "center",
           flexShrink: 0
         }}>
-          ➤
-        </button>
-      </div>
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
+            {iBlockedThem
+              ? "You've blocked this user. Unblock them to send messages."
+              : "You can't message this user."}
+          </p>
+        </div>
+      )}
+
+      {(!blockStatusLoaded || canMessage) && (
+        <div style={{
+          padding: "12px 16px", borderTop: "1px solid var(--border)",
+          display: "flex", gap: "10px", alignItems: "flex-end",
+          background: "var(--bg)", flexShrink: 0
+        }}>
+          <textarea
+            value={newMessage}
+            onChange={e => setNewMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            rows={1}
+            disabled={!blockStatusLoaded}
+            style={{
+              flex: 1, padding: "10px 14px", borderRadius: "20px",
+              border: "1.5px solid #e0e0e0", fontSize: "14px",
+              outline: "none", resize: "none", lineHeight: "1.5",
+              fontFamily: "inherit", color: "var(--text)", maxHeight: "120px"
+            }}
+          />
+          <button onClick={sendMessage} disabled={!newMessage.trim() || !blockStatusLoaded} style={{
+            width: "42px", height: "42px", borderRadius: "50%",
+            background: newMessage.trim() ? "#4F46E5" : "#e0e0e0",
+            color: "var(--bg)", border: "none", fontSize: "16px",
+            cursor: newMessage.trim() ? "pointer" : "default",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0
+          }}>
+            ➤
+          </button>
+        </div>
+      )}
     </div>
   );
 }

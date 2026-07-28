@@ -18,6 +18,7 @@ export async function unblockUser(targetUid) {
   await deleteDoc(doc(db, "blocks", `${uid}_${targetUid}`));
 }
 
+// Did I block targetUid?
 export async function isBlocked(targetUid) {
   const uid = auth.currentUser?.uid;
   if (!uid) return false;
@@ -27,6 +28,22 @@ export async function isBlocked(targetUid) {
     return snap.exists();
   } catch (error) {
     console.error("isBlocked error:", error);
+    return false;
+  }
+}
+
+// Did otherUid block ME? This is the missing check that let blocked users
+// keep messaging the person who blocked them - isBlocked() only ever looks
+// at blocks the *current* user made, never blocks made against them.
+export async function isBlockedBy(otherUid) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return false;
+
+  try {
+    const snap = await getDoc(doc(db, "blocks", `${otherUid}_${uid}`));
+    return snap.exists();
+  } catch (error) {
+    console.error("isBlockedBy error:", error);
     return false;
   }
 }
